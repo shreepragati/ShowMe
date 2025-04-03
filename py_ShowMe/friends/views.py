@@ -50,3 +50,6 @@ class FriendList(APIView):
             "friends": [{"id": friend.id, "username": friend.username} for friend in friends],
             "pending_requests": [{"id": req.id, "sender": req.sender.username} for req in pending_requests]
         }, status=status.HTTP_200_OK)
+
+
+#this is a view file
