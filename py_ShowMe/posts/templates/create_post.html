@@ -1,9 +1,9 @@
-{% block content %}
+<!-- {% block content %}
 <h2>All Posts</h2>
 <a href="{% url 'logout' %}">Logout</a>
 <a href="{% url 'friends:list' %}">See your friends</a>
-<!-- Post Form -->
-<form method="post" enctype="multipart/form-data">
+ Post Form -->
+<!-- <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit">Post</button>
@@ -25,7 +25,7 @@
     </video>
     {% endif %}
 
-    <!-- Add Friend Button Logic -->
+    !-- Add Friend Button Logic -->
     {% if post.user != request.user %}
     {% if post.user.id not in friends %}
     <form action="{% url 'friends:send_request' post.user.id %}" method="post">
@@ -41,4 +41,4 @@
 </div>
 {% endfor %}
 
-{% endblock %}
+{% endblock %}  -->
