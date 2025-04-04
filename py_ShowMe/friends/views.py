@@ -13,14 +13,30 @@ class SendFriendRequest(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, user_id):
+        sender = request.user
         receiver = get_object_or_404(User, id=user_id)
-        
-        # Prevent duplicate friend requests
-        if request.user == receiver or Friendship.objects.filter(sender=request.user, receiver=receiver).exists():
-            return Response({"message": "Friend request already sent or invalid"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        friendship = Friendship.objects.create(sender=request.user, receiver=receiver)
-        return Response({"message": "Friend request sent"}, status=status.HTTP_201_CREATED)
+
+        if sender == receiver:
+            return Response({"message": "You cannot send a friend request to yourself."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Already sent request
+        existing = Friendship.objects.filter(sender=sender, receiver=receiver).first()
+        if existing:
+            if existing.accepted:
+                return Response({"message": "You are already friends."}, status=status.HTTP_200_OK)
+            return Response({"message": "Friend request already sent. Waiting for confirmation."}, status=status.HTTP_200_OK)
+
+        # Reverse request already exists
+        reverse = Friendship.objects.filter(sender=receiver, receiver=sender).first()
+        if reverse:
+            if reverse.accepted:
+                return Response({"message": "You are already friends."}, status=status.HTTP_200_OK)
+            return Response({"message": f"{receiver.username} has already sent you a request. Accept it to become friends."}, status=status.HTTP_200_OK)
+
+        # Create new friend request
+        Friendship.objects.create(sender=sender, receiver=receiver)
+        return Response({"message": "Friend request sent."}, status=status.HTTP_201_CREATED)
+
 
 
 class AcceptFriendRequest(APIView):
@@ -31,25 +47,34 @@ class AcceptFriendRequest(APIView):
         friendship.accepted = True
         friendship.save()
 
+        # Optional: Remove duplicate reverse pending request if exists
+        reverse = Friendship.objects.filter(sender=request.user, receiver=friendship.sender, accepted=False).first()
+        if reverse:
+            reverse.delete()
+
         return Response({"message": "Friend request accepted"}, status=status.HTTP_200_OK)
+
 
 
 class FriendList(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        user = request.user
+
         friends = User.objects.filter(
-            id__in=Friendship.objects.filter(accepted=True, sender=request.user).values_list('receiver', flat=True)
+            id__in=Friendship.objects.filter(accepted=True, sender=user).values_list('receiver', flat=True)
         ) | User.objects.filter(
-            id__in=Friendship.objects.filter(accepted=True, receiver=request.user).values_list('sender', flat=True)
+            id__in=Friendship.objects.filter(accepted=True, receiver=user).values_list('sender', flat=True)
         )
 
-        pending_requests = Friendship.objects.filter(receiver=request.user, accepted=False)
+        pending_requests_received = Friendship.objects.filter(receiver=user, accepted=False)
+        pending_requests_sent = Friendship.objects.filter(sender=user, accepted=False)
 
         return Response({
             "friends": [{"id": friend.id, "username": friend.username} for friend in friends],
-            "pending_requests": [{"id": req.id, "sender": req.sender.username} for req in pending_requests]
+            "pending_requests_received": [{"id": req.id, "sender": req.sender.username} for req in pending_requests_received],
+            "pending_requests_sent": [{"id": req.id, "receiver": req.receiver.username} for req in pending_requests_sent],
         }, status=status.HTTP_200_OK)
-
 
 #this is a view file
