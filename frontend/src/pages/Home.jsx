@@ -1,23 +1,37 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { getPosts } from '../services/posts';
+import { fetchFriendList } from '../services/friends';
+import PostCard from '../components/PostCard';
+import { AuthContext } from '../context/AuthContext';
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
+  const [friendUsernames, setFriendUsernames] = useState([]); // ✅ updated state name
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
-    getPosts().then(res => setPosts(res.data));
+    getPosts()
+      .then(res => setPosts(res.data))
+      .catch(err => console.error("Failed to fetch posts", err));
+
+    fetchFriendList()
+      .then(res => {
+        const friendList = res.data.friends.map(f => f.username); // ✅ grab usernames
+        setFriendUsernames(friendList);
+      })
+      .catch(err => console.error("Failed to fetch friend list", err));
   }, []);
 
   return (
     <div className="p-4">
       <h2 className="text-xl font-bold mb-4">Feed</h2>
       {posts.map(post => (
-        <div key={post.id} className="p-4 mb-4 bg-white shadow rounded">
-          <p><strong>{post.user}</strong>:</p>
-          {post.text_content && <p>{post.text_content}</p>}
-          {post.image && <img src={post.image} alt="Post" className="mt-2 max-h-60 rounded" />}
-          {post.video && <video controls src={post.video} className="mt-2 max-h-60 rounded" />}
-        </div>
+        <PostCard
+          key={post.id}
+          post={post}
+          currentUsername={user?.username}
+          friends={friendUsernames}
+        />
       ))}
     </div>
   );
