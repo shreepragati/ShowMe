@@ -1,8 +1,9 @@
-// context/AuthContext.jsx
 import { createContext, useContext, useState } from 'react';
 
-const AuthContext = createContext();
+// ✅ Exporting AuthContext so it can be used in places like <PostCard /> or Home.jsx
+export const AuthContext = createContext();
 
+// ✅ Hook for convenience
 export const useAuth = () => useContext(AuthContext);
 
 export default function AuthProvider({ children }) {
@@ -16,6 +17,7 @@ export default function AuthProvider({ children }) {
     setRefresh(data.refresh);
     localStorage.setItem('access', data.access);
     localStorage.setItem('refresh', data.refresh);
+    localStorage.setItem('user', JSON.stringify(data.user)); // 👈 optional: store user info too
   };
 
   const logout = () => {
