@@ -7,6 +7,7 @@ from .models import Post
 from .serializers import PostSerializer
 from userProfile.models import Profile
 from friends.models import Friendship
+from rest_framework import status
 
 class PostListCreateView(APIView):
     permission_classes = [IsAuthenticated]
@@ -42,3 +43,18 @@ class PostListCreateView(APIView):
             serializer.save(user=request.user)
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
+
+class PostDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        try:
+            post = Post.objects.get(pk=pk)
+        except Post.DoesNotExist:
+            return Response({"error": "Post not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if post.user != request.user:
+            return Response({"error": "You do not have permission to delete this post."}, status=status.HTTP_403_FORBIDDEN)
+
+        post.delete()
+        return Response({"message": "Post deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
