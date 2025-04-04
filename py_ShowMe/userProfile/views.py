@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import AllowAny
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import UserRegistrationSerializer,ProfileUpdateSerializer
+from .serializers import UserRegistrationSerializer,ProfileUpdateSerializer,CurrentUserSerializer
 
 # ✅ Register API
 class RegisterView(APIView):
@@ -30,11 +30,15 @@ class LoginView(APIView):
 
         if user is not None:
             refresh = RefreshToken.for_user(user)
+            user_data = CurrentUserSerializer(user).data  # Serialize user data
+
             return Response({
                 "message": "Login successful!",
                 "refresh": str(refresh),
                 "access": str(refresh.access_token),
+                "user": user_data
             })
+
         return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
 # ✅ Logout API (Blacklist the refresh token)
