@@ -6,7 +6,7 @@ import { AuthContext } from '../context/AuthContext';
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
-  const [friendUsernames, setFriendUsernames] = useState([]); // ✅ updated state name
+  const [friendUsernames, setFriendUsernames] = useState([]);
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
@@ -16,7 +16,7 @@ export default function Home() {
 
     fetchFriendList()
       .then(res => {
-        const friendList = res.data.friends.map(f => f.username); // ✅ grab usernames
+        const friendList = res.data.friends.map(f => f.username);
         setFriendUsernames(friendList);
       })
       .catch(err => console.error("Failed to fetch friend list", err));
@@ -29,8 +29,8 @@ export default function Home() {
         <PostCard
           key={post.id}
           post={post}
-          currentUsername={user?.username}
-          friends={friendUsernames}
+          currentUserId={user?.id}           // ✅ Pass actual user ID
+          friends={friendUsernames}          // ✅ Pass usernames
         />
       ))}
     </div>
