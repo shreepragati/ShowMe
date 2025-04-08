@@ -91,4 +91,6 @@ REST_FRAMEWORK = {
 }
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+
+#ALLOWED_HOSTS = '*'
 CORS_ALLOW_ALL_ORIGINS=True

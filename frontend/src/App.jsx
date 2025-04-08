@@ -6,7 +6,7 @@ import Friends from './pages/Friends';
 import CreatePost from './pages/CreatePost';
 import NavBar from './components/NavBar';
 import ProfilePage from './pages/ProfilePage'; // ✅ this was missing
-
+import UserProfile from './pages/UserProfile';
 
 const isAuthenticated = () => !!localStorage.getItem('access');
 
@@ -25,6 +25,7 @@ export default function App() {
         <Route path="/friends" element={<ProtectedRoute><Friends /></ProtectedRoute>} />
         <Route path="/create" element={<ProtectedRoute><CreatePost /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        <Route path="/profile/:id" element={<UserProfile />} />
         <Route path="*" element={<Navigate to="/home" />} />
       </Routes>
     </>

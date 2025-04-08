@@ -3,18 +3,28 @@ import { fetchProfile, updateProfile } from '../services/profile';
 import { getPosts } from '../services/posts';
 import { AuthContext } from '../context/AuthContext';
 
+const baseURL = 'http://127.0.0.1:8000';
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [formData, setFormData] = useState({});
   const [editing, setEditing] = useState(false);
   const [myPosts, setMyPosts] = useState([]);
+  const [showFollowers, setShowFollowers] = useState(false);
+  const [showFollowing, setShowFollowing] = useState(false);
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
     fetchProfile()
       .then(res => {
-        setProfile(res.data);
-        setFormData(res.data);
+        const data = res.data;
+
+        // Handle fallback if followers/following aren't separate
+        if (!data.followers) data.followers = data.friends || [];
+        if (!data.following) data.following = data.friends || [];
+
+        setProfile(data);
+        setFormData(data);
       })
       .catch(console.error);
 
@@ -53,47 +63,53 @@ export default function ProfilePage() {
   if (!profile) return <div>Loading profile...</div>;
 
   return (
-    <div className="max-w-xl mx-auto p-4">
+    <div className="max-w-3xl mx-auto p-4">
       {/* Header */}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">{profile.username}</h2>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setEditing(!editing)}
-            className="border px-3 py-1 rounded-md text-sm"
-          >
-            {editing ? 'Cancel' : 'Edit'}
-          </button>
-          <button className="text-2xl">⋯</button>
-        </div>
-      </div>
-
-      {/* Profile Info */}
-      <div className="flex items-center gap-6 mb-6">
+      <div className="flex flex-col items-center text-center">
         <img
-          src={profile.profile_pic}
+          src={profile.profile_pic ? `${baseURL}${profile.profile_pic}` : '/default-avatar.png'}
           alt="Profile"
-          className="w-20 h-20 rounded-full object-cover border"
+          className="w-28 h-28 rounded-full object-cover border mb-2"
         />
-        <div className="flex gap-6">
+        <h2 className="text-2xl font-semibold">{profile.username}</h2>
+        <div className="flex gap-8 mt-4">
           <div className="text-center">
             <p className="font-bold">{myPosts.length}</p>
             <p className="text-sm text-gray-500">Posts</p>
           </div>
-          <div className="text-center">
-            <p className="font-bold">{profile.followers || 0}</p>
+          <div
+            className="text-center cursor-pointer"
+            onClick={() => {
+              setShowFollowers(true);
+              setShowFollowing(false);
+            }}
+          >
+            <p className="font-bold">{profile.followers?.length || 0}</p>
             <p className="text-sm text-gray-500">Followers</p>
           </div>
-          <div className="text-center">
-            <p className="font-bold">{profile.following || 0}</p>
+          <div
+            className="text-center cursor-pointer"
+            onClick={() => {
+              setShowFollowing(true);
+              setShowFollowers(false);
+            }}
+          >
+            <p className="font-bold">{profile.following?.length || 0}</p>
             <p className="text-sm text-gray-500">Following</p>
           </div>
         </div>
+
+        <button
+          onClick={() => setEditing(!editing)}
+          className="mt-4 px-4 py-1 border rounded text-sm"
+        >
+          {editing ? 'Cancel' : 'Edit'}
+        </button>
       </div>
 
       {/* Editable Fields */}
       {editing ? (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 mt-6">
           <input type="file" name="profile_pic" onChange={handleChange} />
           {['email', 'first_name', 'last_name', 'dob', 'bio'].map(field => (
             <div key={field}>
@@ -121,7 +137,7 @@ export default function ProfilePage() {
           </button>
         </form>
       ) : (
-        <div className="mb-6 text-sm">
+        <div className="mt-6 text-sm space-y-1">
           <p><strong>Name:</strong> {profile.first_name} {profile.last_name}</p>
           <p><strong>Email:</strong> {profile.email}</p>
           <p><strong>DOB:</strong> {profile.dob}</p>
@@ -129,14 +145,44 @@ export default function ProfilePage() {
         </div>
       )}
 
+      {/* Followers / Following Display */}
+      {showFollowers && (
+        <div className="mt-6">
+          <h3 className="font-semibold mb-2">Followers</h3>
+          <ul className="space-y-1">
+            {profile.followers?.length ? (
+              profile.followers.map(user => (
+                <li key={user.id} className="border p-2 rounded">{user.username}</li>
+              ))
+            ) : (
+              <p>No followers yet.</p>
+            )}
+          </ul>
+        </div>
+      )}
+      {showFollowing && (
+        <div className="mt-6">
+          <h3 className="font-semibold mb-2">Following</h3>
+          <ul className="space-y-1">
+            {profile.following?.length ? (
+              profile.following.map(user => (
+                <li key={user.id} className="border p-2 rounded">{user.username}</li>
+              ))
+            ) : (
+              <p>Not following anyone.</p>
+            )}
+          </ul>
+        </div>
+      )}
+
       {/* My Posts Grid */}
-      <div className="grid grid-cols-3 gap-2 mt-6">
+      <div className="grid grid-cols-3 gap-1 mt-8 border-t pt-4">
         {myPosts.map(post => (
           <img
             key={post.id}
             src={post.image}
             alt="Post"
-            className="w-full h-28 object-cover rounded"
+            className="w-full h-36 object-cover"
           />
         ))}
       </div>
