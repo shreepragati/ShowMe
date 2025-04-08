@@ -25,7 +25,9 @@ export default function Home() {
   return (
     <div className="p-4">
       <h2 className="text-xl font-bold mb-4">Feed</h2>
-      {posts.map(post => (
+      {posts 
+      .filter(post => post.user.id !== user?.id) 
+      .map(post => (
         <PostCard
           key={post.id}
           post={post}
