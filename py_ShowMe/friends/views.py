@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from .models import Friendship
 from .serializers import FriendshipSerializer
+from django.db import models
 
 User = get_user_model()
 
@@ -77,4 +78,21 @@ class FriendList(APIView):
             "pending_requests_sent": [{"id": req.id, "receiver": req.receiver.username} for req in pending_requests_sent],
         }, status=status.HTTP_200_OK)
 
-#this is a view file
+class UnfollowFriend(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, user_id):
+        user = request.user
+
+        # Check for friendship in either direction
+        friendship = Friendship.objects.filter(
+            accepted=True
+        ).filter(
+            (models.Q(sender=user, receiver__id=user_id)) | (models.Q(sender__id=user_id, receiver=user))
+        ).first()
+
+        if not friendship:
+            return Response({"message": "Friendship not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        friendship.delete()
+        return Response({"message": "Unfollowed (unfriended) successfully."}, status=status.HTTP_200_OK)
