@@ -15,11 +15,11 @@ export default function ProfilePage() {
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
+    if (!user || !user.id) return; // Don't run if user isn't ready yet
+
     fetchProfile()
       .then(res => {
         const data = res.data;
-
-        // Handle fallback if followers/following aren't separate
         if (!data.followers) data.followers = data.friends || [];
         if (!data.following) data.following = data.friends || [];
 
@@ -30,11 +30,11 @@ export default function ProfilePage() {
 
     getPosts()
       .then(res => {
-        const userPosts = res.data.filter(post => post.user.id === user.id);
+        const userPosts = res.data.filter(post => post.user?.id === user.id);
         setMyPosts(userPosts);
       })
       .catch(console.error);
-  }, [user.id]);
+  }, [user]);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -60,7 +60,7 @@ export default function ProfilePage() {
     }
   };
 
-  if (!profile) return <div>Loading profile...</div>;
+  if (!user || !profile) return <div className="text-center py-10">Loading profile...</div>;
 
   return (
     <div className="max-w-3xl mx-auto p-4">
@@ -125,7 +125,7 @@ export default function ProfilePage() {
           ))}
           <select
             name="privacy"
-            value={formData.privacy}
+            value={formData.privacy || 'public'}
             onChange={handleChange}
             className="w-full p-2 border rounded"
           >
@@ -150,7 +150,7 @@ export default function ProfilePage() {
         <div className="mt-6">
           <h3 className="font-semibold mb-2">Followers</h3>
           <ul className="space-y-1">
-            {profile.followers?.length ? (
+            {profile.followers.length > 0 ? (
               profile.followers.map(user => (
                 <li key={user.id} className="border p-2 rounded">{user.username}</li>
               ))
@@ -160,11 +160,12 @@ export default function ProfilePage() {
           </ul>
         </div>
       )}
+
       {showFollowing && (
         <div className="mt-6">
           <h3 className="font-semibold mb-2">Following</h3>
           <ul className="space-y-1">
-            {profile.following?.length ? (
+            {profile.following.length > 0 ? (
               profile.following.map(user => (
                 <li key={user.id} className="border p-2 rounded">{user.username}</li>
               ))
