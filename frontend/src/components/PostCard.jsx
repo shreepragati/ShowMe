@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
-import { sendFriendRequest } from '../services/friends';
+import { sendFriendRequest, unfollowFriend } from '../services/friends';
 import { useFriendContext } from '../context/FriendContext';
 
 const baseURL = 'http://127.0.0.1:8000';
 
 const PostCard = ({ post, currentUserId, friends }) => {
-  const [requestSent, setRequestSent] = useState(false);
   const [ownPost, setOwnPost] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
   const { triggerRefresh } = useFriendContext();
 
   useEffect(() => {
@@ -15,15 +15,22 @@ const PostCard = ({ post, currentUserId, friends }) => {
     }
   }, [currentUserId, post.user_id]);
 
-  const isAlreadyFriend = friends.includes(post.user);
+  useEffect(() => {
+    setIsFollowing(friends.includes(post.user));
+  }, [friends, post.user]);
 
-  const handleFollow = async () => {
+  const handleFollowToggle = async () => {
     try {
-      await sendFriendRequest(post.user_id);
-      setRequestSent(true);
-      triggerRefresh();
+      if (isFollowing) {
+        await unfollowFriend(post.user_id);
+        setIsFollowing(false);
+      } else {
+        await sendFriendRequest(post.user_id);
+        setIsFollowing(true);
+      }
+      triggerRefresh(); // 🔄 to refresh friend list in context if needed
     } catch (err) {
-      console.error('Failed to send friend request:', err);
+      console.error('Failed to toggle follow:', err);
     }
   };
 
@@ -39,16 +46,18 @@ const PostCard = ({ post, currentUserId, friends }) => {
           <p className="font-semibold">{post.user}</p>
         </div>
 
-        {!ownPost && !isAlreadyFriend && !requestSent && (
+        {!ownPost && (
           <button
-            onClick={handleFollow}
-            className="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+            onClick={handleFollowToggle}
+            className={`text-sm px-3 py-1 rounded transition ${
+              isFollowing
+                ? ' text-green-600 hover:bg-green-200'
+                : 'bg-blue-500 text-white hover:bg-blue-600'
+            }`}
           >
-            Follow
+            {isFollowing ? 'Following' : 'Follow'}
           </button>
         )}
-        {!ownPost && requestSent && <span className="text-sm text-gray-500">Request Sent</span>}
-        {!ownPost && isAlreadyFriend && <span className="text-sm text-green-600">Following</span>}
       </div>
 
       {post.text_content && <p className="mt-2">{post.text_content}</p>}

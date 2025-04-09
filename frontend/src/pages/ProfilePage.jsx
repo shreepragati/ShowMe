@@ -117,7 +117,7 @@ export default function ProfilePage() {
 
         <button
           onClick={() => setEditing(!editing)}
-          className="mt-4 px-4 py-1 border rounded text-sm"
+          className="bg-blue-500 text-white px-3 py-1 rounded"
         >
           {editing ? 'Cancel' : 'Edit'}
         </button>
