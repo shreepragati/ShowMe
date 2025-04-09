@@ -1,25 +1,27 @@
 import { useState, useEffect } from 'react';
 import { sendFriendRequest } from '../services/friends';
+import { useFriendContext } from '../context/FriendContext';
 
 const baseURL = 'http://127.0.0.1:8000';
 
 const PostCard = ({ post, currentUserId, friends }) => {
   const [requestSent, setRequestSent] = useState(false);
   const [ownPost, setOwnPost] = useState(false);
+  const { triggerRefresh } = useFriendContext();
 
-  // ✅ Safe comparison after hydration
   useEffect(() => {
     if (currentUserId && post.user_id) {
       setOwnPost(Number(post.user_id) === Number(currentUserId));
     }
   }, [currentUserId, post.user_id]);
 
-  const isAlreadyFriend = friends.includes(post.user); // friend username
+  const isAlreadyFriend = friends.includes(post.user);
 
   const handleFollow = async () => {
     try {
       await sendFriendRequest(post.user_id);
       setRequestSent(true);
+      triggerRefresh();
     } catch (err) {
       console.error('Failed to send friend request:', err);
     }
@@ -28,7 +30,6 @@ const PostCard = ({ post, currentUserId, friends }) => {
   return (
     <div className="p-4 mb-4 bg-white shadow rounded">
       <div className="flex items-center justify-between">
-        {/* 👤 Profile image + username */}
         <div className="flex items-center space-x-2">
           <img
             src={post.profile_pic ? `${baseURL}${post.profile_pic}` : '/default-avatar.png'}
@@ -38,7 +39,6 @@ const PostCard = ({ post, currentUserId, friends }) => {
           <p className="font-semibold">{post.user}</p>
         </div>
 
-        {/* 🟢 Follow button logic */}
         {!ownPost && !isAlreadyFriend && !requestSent && (
           <button
             onClick={handleFollow}
@@ -47,18 +47,12 @@ const PostCard = ({ post, currentUserId, friends }) => {
             Follow
           </button>
         )}
-        {!ownPost && requestSent && (
-          <span className="text-sm text-gray-500">Request Sent</span>
-        )}
-        {!ownPost && isAlreadyFriend && (
-          <span className="text-sm text-green-600">Following</span>
-        )}
+        {!ownPost && requestSent && <span className="text-sm text-gray-500">Request Sent</span>}
+        {!ownPost && isAlreadyFriend && <span className="text-sm text-green-600">Following</span>}
       </div>
 
-      {/* 📝 Caption */}
       {post.text_content && <p className="mt-2">{post.text_content}</p>}
 
-      {/* 🖼️ Image */}
       {post.image && (
         <img
           src={`${baseURL}${post.image}`}
@@ -67,7 +61,6 @@ const PostCard = ({ post, currentUserId, friends }) => {
         />
       )}
 
-      {/* 🎥 Video */}
       {post.video && (
         <video
           controls
