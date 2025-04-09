@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Profile
+import os
+from django.conf import settings
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -22,7 +24,7 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='user.email')
     first_name = serializers.CharField(source='user.first_name')
     last_name = serializers.CharField(source='user.last_name')
-    
+
     class Meta:
         model = Profile
         fields = ['username', 'email', 'first_name', 'last_name', 'bio', 'dob', 'profile_pic', 'privacy']
@@ -33,6 +35,13 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
         for attr, value in user_data.items():
             setattr(instance.user, attr, value)
         instance.user.save()
+
+        # Handle profile picture replacement
+        new_picture = validated_data.get("profile_pic", None)
+        if new_picture and instance.profile_pic:
+            old_path = instance.profile_pic.path
+            if os.path.exists(old_path):
+                os.remove(old_path)
 
         # Update Profile model fields
         for attr, value in validated_data.items():
