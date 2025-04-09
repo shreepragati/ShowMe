@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { fetchProfile, updateProfile } from '../services/profile';
 import { getPosts } from '../services/posts';
 import { AuthContext } from '../context/AuthContext';
+import toast from 'react-hot-toast';
 
 const baseURL = 'http://127.0.0.1:8000';
 
@@ -15,14 +16,13 @@ export default function ProfilePage() {
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
-    if (!user || !user.id) return; // Don't run if user isn't ready yet
+    if (!user || !user.id) return;
 
     fetchProfile()
       .then(res => {
         const data = res.data;
         if (!data.followers) data.followers = data.friends || [];
         if (!data.following) data.following = data.friends || [];
-
         setProfile(data);
         setFormData(data);
       })
@@ -46,17 +46,33 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const requiredFields = ['email', 'first_name', 'last_name', 'dob', 'bio', 'privacy'];
+    for (const field of requiredFields) {
+      if (!formData[field]) {
+        toast.error(`Please fill out the ${field.replace('_', ' ')} field.`);
+        return;
+      }
+    }
+
     try {
       const data = new FormData();
       for (const key in formData) {
         data.append(key, formData[key]);
       }
-      const res = await updateProfile(data);
-      setProfile(res.data);
+
+      await updateProfile(data);
+
+      // ✅ Refetch profile after update to reflect changes
+      const refreshed = await fetchProfile();
+      setProfile(refreshed.data);
+      setFormData(refreshed.data);
+
       setEditing(false);
-      alert('Profile updated!');
+      toast.success('Profile updated successfully!');
     } catch (err) {
       console.error('Update failed', err);
+      toast.error('Failed to update profile.');
     }
   };
 
@@ -145,7 +161,7 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Followers / Following Display */}
+      {/* Followers / Following */}
       {showFollowers && (
         <div className="mt-6">
           <h3 className="font-semibold mb-2">Followers</h3>
@@ -176,7 +192,7 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* My Posts Grid */}
+      {/* My Posts */}
       <div className="grid grid-cols-3 gap-1 mt-8 border-t pt-4">
         {myPosts.map(post => (
           <img

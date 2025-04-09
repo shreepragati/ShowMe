@@ -15,6 +15,8 @@ export default function CreatePost() {
     try {
       await createPost(formData);
       toast.success("Post created!");
+      setForm({ post_type: 'text', text_content: '', image: null, video: null });
+      e.target.reset();
     } catch {
       toast.error("Failed to create post");
     }
