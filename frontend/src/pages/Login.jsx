@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login as loginAPI } from '../services/auth'; // alias to avoid name conflict
-import { useAuth } from '../context/AuthContext';     // ✅ use context
+import { login as loginAPI } from '../services/auth';
+import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
+import { FcGoogle } from 'react-icons/fc';
 
 export default function Login() {
   const [formData, setFormData] = useState({ username: '', password: '' });
   const navigate = useNavigate();
-  const { login } = useAuth(); // ✅ login function from context
+  const { login } = useAuth();
 
   const handleChange = e =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -15,13 +16,18 @@ export default function Login() {
   const handleSubmit = async e => {
     e.preventDefault();
     try {
-      const data = await loginAPI(formData); // call backend API
-      login(data); // ✅ store user, access, refresh in context & localStorage
+      const data = await loginAPI(formData);
+      login(data);
       toast.success('Login successful!');
       navigate('/home');
     } catch {
       toast.error('Invalid credentials');
     }
+  };
+
+  const handleGoogleLogin = () => {
+    // Redirect to Django Allauth Google login route
+    window.location.href = 'http://localhost:8000/auth/google/login/';
   };
 
   return (
@@ -48,6 +54,17 @@ export default function Login() {
             Login
           </button>
         </form>
+
+        <div className="mt-6 text-center">
+          <p className="text-gray-600 mb-2">or login with</p>
+          <button
+            onClick={handleGoogleLogin}
+            className="flex items-center justify-center gap-2 bg-white border py-2 px-4 rounded shadow hover:bg-gray-100 w-full"
+          >
+            <FcGoogle size={20} />
+            <span>Sign in with Google</span>
+          </button>
+        </div>
       </div>
     </div>
   );
