@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from .models import Friendship
 from .serializers import FriendshipSerializer
 from django.db import models
+from userProfile.models import Profile 
 
 User = get_user_model()
 
@@ -20,23 +21,25 @@ class SendFriendRequest(APIView):
         if sender == receiver:
             return Response({"message": "You cannot send a friend request to yourself."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Already sent request
-        existing = Friendship.objects.filter(sender=sender, receiver=receiver).first()
-        if existing:
-            if existing.accepted:
-                return Response({"message": "You are already friends."}, status=status.HTTP_200_OK)
-            return Response({"message": "Friend request already sent. Waiting for confirmation."}, status=status.HTTP_200_OK)
+        # Already sent or reverse request exists
+        if Friendship.objects.filter(sender=sender, receiver=receiver).exists() or Friendship.objects.filter(sender=receiver, receiver=sender).exists():
+            return Response({"message": "Friend request already exists or you are already friends."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Reverse request already exists
-        reverse = Friendship.objects.filter(sender=receiver, receiver=sender).first()
-        if reverse:
-            if reverse.accepted:
-                return Response({"message": "You are already friends."}, status=status.HTTP_200_OK)
-            return Response({"message": f"{receiver.username} has already sent you a request. Accept it to become friends."}, status=status.HTTP_200_OK)
+        # Get receiver's privacy status
+        try:
+            receiver_profile = receiver.profile  # related name for OneToOneField is `profile`
+        except Profile.DoesNotExist:
+            return Response({"message": "Receiver's profile not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Create new friend request
-        Friendship.objects.create(sender=sender, receiver=receiver)
-        return Response({"message": "Friend request sent."}, status=status.HTTP_201_CREATED)
+        if receiver_profile.privacy == 'public':
+            # Directly create accepted friendship
+            Friendship.objects.create(sender=sender, receiver=receiver, accepted=True)
+            return Response({"message": "You are now friends."}, status=status.HTTP_201_CREATED)
+        else:
+            # Private profile → create pending friend request
+            Friendship.objects.create(sender=sender, receiver=receiver, accepted=False)
+            return Response({"message": "Friend request sent. Awaiting acceptance."}, status=status.HTTP_201_CREATED)
+
 
 
 
