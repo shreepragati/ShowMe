@@ -103,7 +103,11 @@ def google_login(request):
     )
 
     refresh = RefreshToken.for_user(user)
+    user_data = CurrentUserSerializer(user).data
+
     return Response({
         'refresh': str(refresh),
         'access': str(refresh.access_token),
+        'user': user_data
     })
+
