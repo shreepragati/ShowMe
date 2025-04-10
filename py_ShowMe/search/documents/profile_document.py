@@ -22,4 +22,5 @@ class ProfileDocument(Document):
         fields = [
             'bio',
             'privacy',
+            'profile_pic',
         ]

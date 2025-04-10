@@ -16,6 +16,7 @@ class UserSearchView(APIView):
                 "username": hit.username,
                 "bio": hit.bio,
                 "privacy": hit.privacy,
+                "profile_pic": hit.profile_pic,
             }
             for hit in results
         ]
