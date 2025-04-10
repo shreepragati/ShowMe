@@ -9,11 +9,18 @@ export default function AuthProvider({ children }) {
   const [access, setAccess] = useState(localStorage.getItem('access') || null);
   const [refresh, setRefresh] = useState(localStorage.getItem('refresh') || null);
 
-  // ✅ Restore user on page refresh
+  // ✅ Safely restore user on page refresh
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        setUser(parsedUser);
+      } catch (err) {
+        console.error("Error parsing user from localStorage:", err);
+        // optional: clear corrupted localStorage
+        localStorage.removeItem("user");
+      }
     }
   }, []);
 
