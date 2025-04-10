@@ -102,7 +102,7 @@ class CancelFriendRequestView(APIView):
 
     def delete(self, request, receiver_id):
         try:
-            friend_request = Friendship.objects.get(sender=request.user, receiver_id=receiver_id, status='pending')
+            friend_request = Friendship.objects.get(sender=request.user, receiver_id=receiver_id, accepted=False)
             friend_request.delete()
             return Response({"detail": "Friend request cancelled."}, status=status.HTTP_204_NO_CONTENT)
         except Friendship.DoesNotExist:
