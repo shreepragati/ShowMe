@@ -9,6 +9,8 @@ from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view, permission_classes
 from .serializers import UserRegistrationSerializer,ProfileUpdateSerializer,CurrentUserSerializer
+from django.utils.text import slugify
+
 
 # ✅ Register API
 class RegisterView(APIView):
@@ -73,6 +75,15 @@ class ProfileUpdateView(APIView):
 
 GOOGLE_TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo"
 
+def generate_unique_username(base_name):
+    username = slugify(base_name)
+    counter = 1
+    while User.objects.filter(username=username).exists():
+        username = f"{slugify(base_name)}{counter}"
+        counter += 1
+    return username
+
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def google_login(request):
@@ -97,10 +108,17 @@ def google_login(request):
     if not email:
         return Response({'error': 'Email not available'}, status=400)
 
-    user, created = User.objects.get_or_create(
-        username=email,
-        defaults={'email': email, 'first_name': name or ''}
-    )
+    # Check if user exists by email
+    user = User.objects.filter(email=email).first()
+
+    if not user:
+        username = generate_unique_username(name)
+        user = User.objects.create(
+            username=username,
+            email=email,
+            first_name=name.split(' ')[0],
+            last_name=' '.join(name.split(' ')[1:])
+        )
 
     refresh = RefreshToken.for_user(user)
     user_data = CurrentUserSerializer(user).data
@@ -110,4 +128,3 @@ def google_login(request):
         'access': str(refresh.access_token),
         'user': user_data
     })
-
