@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'userProfile',
     'posts',
     'friends',
+    'profileview',
 
     # Dev tools
     'django_extensions',
