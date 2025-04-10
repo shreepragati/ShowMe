@@ -1,3 +1,4 @@
+import requests
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -6,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.permissions import AllowAny
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.decorators import api_view, permission_classes
 from .serializers import UserRegistrationSerializer,ProfileUpdateSerializer,CurrentUserSerializer
 
 # ✅ Register API
@@ -68,3 +70,40 @@ class ProfileUpdateView(APIView):
             serializer.save()
             return Response({"message": "Profile updated successfully", "data": serializer.data})
         return Response(serializer.errors, status=400)
+
+GOOGLE_TOKEN_INFO_URL = "https://oauth2.googleapis.com/tokeninfo"
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def google_login(request):
+    token = request.data.get('token')
+    if token is None:
+        return Response({'error': 'Token is required'}, status=400)
+
+    print("🔐 Token received from frontend:", token)
+
+    # Verify token with Google
+    response = requests.get("https://oauth2.googleapis.com/tokeninfo", params={'id_token': token})
+    print("🌐 Google response status:", response.status_code)
+    print("🌐 Google response content:", response.text)
+
+    if response.status_code != 200:
+        return Response({'error': 'Invalid token'}, status=400)
+
+    data = response.json()
+    email = data.get('email')
+    name = data.get('name')
+
+    if not email:
+        return Response({'error': 'Email not available'}, status=400)
+
+    user, created = User.objects.get_or_create(
+        username=email,
+        defaults={'email': email, 'first_name': name or ''}
+    )
+
+    refresh = RefreshToken.for_user(user)
+    return Response({
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    })
