@@ -65,7 +65,7 @@ const PostCard = ({ post, currentUserId, friends, pendingRequests, sentRequests 
               buttonState === 'Follow'
                 ? 'bg-blue-500 text-white hover:bg-blue-600'
                 : buttonState === 'Requested'
-                ? 'bg-yellow-400 text-white hover:bg-yellow-500'
+                ? 'text-yellow-400 hover:bg-yellow-500'
                 : 'text-green-600 hover:bg-green-200'
             }`}
           >

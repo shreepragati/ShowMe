@@ -3,6 +3,7 @@ import { getPosts } from '../services/posts';
 import { fetchFriendList } from '../services/friends';
 import PostCard from '../components/PostCard';
 import { AuthContext } from '../context/AuthContext';
+import UserSearch from '../components/UserSearch';
 
 export default function Home() {
   const [posts, setPosts] = useState([]);
@@ -39,6 +40,9 @@ export default function Home() {
 
   return (
     <div className="p-4">
+      <div className="flex justify-center mb-6">
+      <UserSearch />
+    n </div>
       <h2 className="text-xl font-bold mb-4">Feed</h2>
       {posts.map(post => (
         <PostCard
