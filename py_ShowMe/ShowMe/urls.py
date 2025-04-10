@@ -10,4 +10,5 @@ urlpatterns = [
     path('posts/', include('posts.urls', namespace='posts')),
     path('friends/', include('friends.urls', namespace='friends')),
     path('auth/', include('allauth.socialaccount.urls')),  # social login
+    path('search/', include('search.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

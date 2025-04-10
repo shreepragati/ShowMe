@@ -42,6 +42,10 @@ INSTALLED_APPS = [
 
     # Dev tools
     'django_extensions',
+
+    #Search
+    'search',
+    'django_elasticsearch_dsl',
 ]
 
 MIDDLEWARE = [
@@ -136,3 +140,9 @@ SOCIALACCOUNT_PROVIDERS = {
 
 CSRF_TRUSTED_ORIGINS = ['http://localhost:5173']
 CORS_ALLOW_CREDENTIALS = True
+
+ELASTICSEARCH_DSL = {
+    'default': {
+        'hosts': 'http://localhost:9200'   # Make sure Elasticsearch is running on this
+    },
+}
