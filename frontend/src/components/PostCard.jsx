@@ -1,36 +1,48 @@
 import { useState, useEffect } from 'react';
-import { sendFriendRequest, unfollowFriend } from '../services/friends';
+import { sendFriendRequest, unfollowFriend, cancelFriendRequest } from '../services/friends';
 import { useFriendContext } from '../context/FriendContext';
 
 const baseURL = 'http://127.0.0.1:8000';
 
-const PostCard = ({ post, currentUserId, friends }) => {
+const PostCard = ({ post, currentUserId, friends, pendingRequests, sentRequests }) => {
   const [ownPost, setOwnPost] = useState(false);
-  const [isFollowing, setIsFollowing] = useState(false);
+  const [buttonState, setButtonState] = useState('Follow'); // 'Follow', 'Requested', 'Following'
   const { triggerRefresh } = useFriendContext();
 
+  const postUserId = post.user_id || post.user?.id;
+
   useEffect(() => {
-    if (currentUserId && post.user_id) {
-      setOwnPost(Number(post.user_id) === Number(currentUserId));
+    if (currentUserId && postUserId) {
+      setOwnPost(Number(postUserId) === Number(currentUserId));
     }
-  }, [currentUserId, post.user_id]);
+  }, [currentUserId, postUserId]);
 
   useEffect(() => {
-    setIsFollowing(friends.includes(post.user));
-  }, [friends, post.user]);
+    if (friends.includes(postUserId)) {
+      setButtonState('Following');
+    } else if (sentRequests.includes(postUserId)) {
+      setButtonState('Requested');
+    } else {
+      setButtonState('Follow');
+    }
+  }, [friends, sentRequests, postUserId]);
 
-  const handleFollowToggle = async () => {
+  const handleButtonClick = async () => {
     try {
-      if (isFollowing) {
-        await unfollowFriend(post.user_id);
-        setIsFollowing(false);
-      } else {
-        await sendFriendRequest(post.user_id);
-        setIsFollowing(true);
+      if (buttonState === 'Follow') {
+        await sendFriendRequest(postUserId);
+        setButtonState('Requested');
+      } else if (buttonState === 'Requested') {
+        await cancelFriendRequest(postUserId);
+        setButtonState('Follow');
+      } else if (buttonState === 'Following') {
+        await unfollowFriend(postUserId);
+        setButtonState('Follow');
       }
-      triggerRefresh(); // 🔄 to refresh friend list in context if needed
+
+      triggerRefresh();
     } catch (err) {
-      console.error('Failed to toggle follow:', err);
+      console.error('Action failed:', err);
     }
   };
 
@@ -43,19 +55,21 @@ const PostCard = ({ post, currentUserId, friends }) => {
             alt="Profile"
             className="w-8 h-8 rounded-full object-cover"
           />
-          <p className="font-semibold">{post.user}</p>
+          <p className="font-semibold">{post.user?.username || post.user}</p>
         </div>
 
         {!ownPost && (
           <button
-            onClick={handleFollowToggle}
+            onClick={handleButtonClick}
             className={`text-sm px-3 py-1 rounded transition ${
-              isFollowing
-                ? ' text-green-600 hover:bg-green-200'
-                : 'bg-blue-500 text-white hover:bg-blue-600'
+              buttonState === 'Follow'
+                ? 'bg-blue-500 text-white hover:bg-blue-600'
+                : buttonState === 'Requested'
+                ? 'bg-yellow-400 text-white hover:bg-yellow-500'
+                : 'text-green-600 hover:bg-green-200'
             }`}
           >
-            {isFollowing ? 'Following' : 'Follow'}
+            {buttonState}
           </button>
         )}
       </div>
