@@ -96,3 +96,14 @@ class UnfollowFriend(APIView):
 
         friendship.delete()
         return Response({"message": "Unfollowed (unfriended) successfully."}, status=status.HTTP_200_OK)
+
+class CancelFriendRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, receiver_id):
+        try:
+            friend_request = Friendship.objects.get(sender=request.user, receiver_id=receiver_id, status='pending')
+            friend_request.delete()
+            return Response({"detail": "Friend request cancelled."}, status=status.HTTP_204_NO_CONTENT)
+        except Friendship.DoesNotExist:
+            return Response({"detail": "No pending friend request to cancel."}, status=status.HTTP_404_NOT_FOUND)
