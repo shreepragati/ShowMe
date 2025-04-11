@@ -128,3 +128,14 @@ def google_login(request):
         'access': str(refresh.access_token),
         'user': user_data
     })
+
+# userProfile/views.py
+from rest_framework.generics import ListAPIView
+from .serializers import UserListSerializer
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class UserListView(ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserListSerializer
