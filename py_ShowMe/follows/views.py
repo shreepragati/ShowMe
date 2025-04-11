@@ -1,4 +1,3 @@
-# follows/views.py
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -65,10 +64,41 @@ class MyFollows(APIView):
 
     def get(self, request):
         user = request.user
-        followers = Follow.objects.filter(following=user, accepted=True)
-        following = Follow.objects.filter(follower=user, accepted=True)
+
+        # Accepted followers and following
+        followers_qs = Follow.objects.filter(following=user, accepted=True)
+        following_qs = Follow.objects.filter(follower=user, accepted=True)
+
+        # Pending requests
+        requests_sent_qs = Follow.objects.filter(follower=user, accepted=False)
+        requests_received_qs = Follow.objects.filter(following=user, accepted=False)
+
+        # Convert to sets for mutual follow check
+        followers_set = set(f.follower.id for f in followers_qs)
+        following_set = set(f.following.id for f in following_qs)
+        mutual_ids = followers_set & following_set
 
         return Response({
-            "followers": [{"id": f.follower.id, "username": f.follower.username} for f in followers],
-            "following": [{"id": f.following.id, "username": f.following.username} for f in following]
+            "followers": [
+                {"id": f.follower.id, "username": f.follower.username}
+                for f in followers_qs
+            ],
+            "following": [
+                {"id": f.following.id, "username": f.following.username}
+                for f in following_qs
+            ],
+            "mutual_follows": [
+                {"id": u.id, "username": u.username}
+                for u in User.objects.filter(id__in=mutual_ids)
+            ],
+            "requests_sent": [
+                {"id": f.id, "to_user_id": f.following.id, "username": f.following.username}
+                for f in requests_sent_qs
+            ],
+            "requests_received": [
+                {"id": f.id, "from_user_id": f.follower.id, "username": f.follower.username}
+                for f in requests_received_qs
+            ]
         })
+
+
