@@ -1,6 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { fetchProfile, updateProfile } from '../services/profile';
-import { getPosts } from '../services/posts';
+import { fetchProfileWithPosts, updateProfile } from '../services/profile';
 import { AuthContext } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -16,22 +15,31 @@ export default function ProfilePage() {
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
-    if (!user || !user.id) return;
+    if (!user || !user.username) return;
 
-    fetchProfile()
+    fetchProfileWithPosts(user.username)
       .then(res => {
         const data = res.data;
-        if (!data.followers) data.followers = data.friends || [];
-        if (!data.following) data.following = data.friends || [];
-        setProfile(data);
-        setFormData(data);
-      })
-      .catch(console.error);
+        const profileData = data.profile;
 
-    getPosts()
-      .then(res => {
-        const userPosts = res.data.filter(post => post.user?.id === user.id);
-        setMyPosts(userPosts);
+        setProfile({
+          ...profileData,
+          followers_count: data.followers_count,
+          following_count: data.following_count,
+          mutual_follow_count: data.mutual_follow_count,
+        });
+
+        setFormData({
+          email: profileData.email || '',
+          first_name: profileData.first_name || '',
+          last_name: profileData.last_name || '',
+          dob: profileData.dob || '',
+          bio: profileData.bio || '',
+          privacy: profileData.privacy || 'public',
+          profile_pic: profileData.profile_pic || null,
+        });
+
+        setMyPosts(data.posts || []);
       })
       .catch(console.error);
   }, [user]);
@@ -63,11 +71,27 @@ export default function ProfilePage() {
 
       await updateProfile(data);
 
-      // ✅ Refetch profile after update to reflect changes
-      const refreshed = await fetchProfile();
-      setProfile(refreshed.data);
-      setFormData(refreshed.data);
+      const refreshed = await fetchProfileWithPosts(user.username);
+      const refreshedData = refreshed.data;
 
+      setProfile({
+        ...refreshedData.profile,
+        followers_count: refreshedData.followers_count,
+        following_count: refreshedData.following_count,
+        mutual_follow_count: refreshedData.mutual_follow_count,
+      });
+
+      setFormData({
+        email: refreshedData.profile.email || '',
+        first_name: refreshedData.profile.first_name || '',
+        last_name: refreshedData.profile.last_name || '',
+        dob: refreshedData.profile.dob || '',
+        bio: refreshedData.profile.bio || '',
+        privacy: refreshedData.profile.privacy || 'public',
+        profile_pic: refreshedData.profile.profile_pic || null,
+      });
+
+      setMyPosts(refreshedData.posts || []);
       setEditing(false);
       toast.success('Profile updated successfully!');
     } catch (err) {
@@ -80,7 +104,7 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-3xl mx-auto p-4">
-      {/* Header */}
+      {/* Profile Header */}
       <div className="flex flex-col items-center text-center">
         <img
           src={profile.profile_pic ? `${baseURL}${profile.profile_pic}` : '/default-avatar.png'}
@@ -93,31 +117,23 @@ export default function ProfilePage() {
             <p className="font-bold">{myPosts.length}</p>
             <p className="text-sm text-gray-500">Posts</p>
           </div>
-          <div
-            className="text-center cursor-pointer"
-            onClick={() => {
-              setShowFollowers(true);
-              setShowFollowing(false);
-            }}
-          >
-            <p className="font-bold">{profile.followers?.length || 0}</p>
+          <div className="text-center cursor-pointer" onClick={() => {
+            setShowFollowers(true); setShowFollowing(false);
+          }}>
+            <p className="font-bold">{profile.followers_count || 0}</p>
             <p className="text-sm text-gray-500">Followers</p>
           </div>
-          <div
-            className="text-center cursor-pointer"
-            onClick={() => {
-              setShowFollowing(true);
-              setShowFollowers(false);
-            }}
-          >
-            <p className="font-bold">{profile.following?.length || 0}</p>
+          <div className="text-center cursor-pointer" onClick={() => {
+            setShowFollowing(true); setShowFollowers(false);
+          }}>
+            <p className="font-bold">{profile.following_count || 0}</p>
             <p className="text-sm text-gray-500">Following</p>
           </div>
         </div>
 
         <button
           onClick={() => setEditing(!editing)}
-          className="bg-blue-500 text-white px-3 py-1 rounded"
+          className="bg-blue-500 text-white px-3 py-1 rounded mt-4"
         >
           {editing ? 'Cancel' : 'Edit'}
         </button>
@@ -141,7 +157,7 @@ export default function ProfilePage() {
           ))}
           <select
             name="privacy"
-            value={formData.privacy || 'public'}
+            value={formData.privacy}
             onChange={handleChange}
             className="w-full p-2 border rounded"
           >
@@ -154,10 +170,11 @@ export default function ProfilePage() {
         </form>
       ) : (
         <div className="mt-6 text-sm space-y-1">
-          <p><strong>Name:</strong> {profile.first_name} {profile.last_name}</p>
-          <p><strong>Email:</strong> {profile.email}</p>
-          <p><strong>DOB:</strong> {profile.dob}</p>
-          <p><strong>Bio:</strong> {profile.bio}</p>
+          <p><strong>Name:</strong> {profile.first_name || ''} {profile.last_name || ''}</p>
+          <p><strong>Email:</strong> {profile.email || 'Not provided'}</p>
+          <p><strong>DOB:</strong> {profile.dob || 'Not provided'}</p>
+          <p><strong>Bio:</strong> {profile.bio || 'Not provided'}</p>
+          <p><strong>Privacy:</strong> {profile.privacy || 'Not specified'}</p>
         </div>
       )}
 
@@ -165,42 +182,29 @@ export default function ProfilePage() {
       {showFollowers && (
         <div className="mt-6">
           <h3 className="font-semibold mb-2">Followers</h3>
-          <ul className="space-y-1">
-            {profile.followers.length > 0 ? (
-              profile.followers.map(user => (
-                <li key={user.id} className="border p-2 rounded">{user.username}</li>
-              ))
-            ) : (
-              <p>No followers yet.</p>
-            )}
-          </ul>
+          <p>{profile.followers_count} followers (list not implemented)</p>
         </div>
       )}
-
       {showFollowing && (
         <div className="mt-6">
           <h3 className="font-semibold mb-2">Following</h3>
-          <ul className="space-y-1">
-            {profile.following.length > 0 ? (
-              profile.following.map(user => (
-                <li key={user.id} className="border p-2 rounded">{user.username}</li>
-              ))
-            ) : (
-              <p>Not following anyone.</p>
-            )}
-          </ul>
+          <p>{profile.following_count} following (list not implemented)</p>
         </div>
       )}
 
-      {/* My Posts */}
-      <div className="grid grid-cols-3 gap-1 mt-8 border-t pt-4">
+      {/* Posts Section */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-8 border-t pt-4">
         {myPosts.map(post => (
-          <img
-            key={post.id}
-            src={post.image}
-            alt="Post"
-            className="w-full h-36 object-cover"
-          />
+          <div key={post.id} className="border p-2 rounded shadow">
+            {post.image && (
+              <img
+                src={`${baseURL}${post.image}`}
+                alt="Post"
+                className="w-full h-40 object-cover rounded mb-2"
+              />
+            )}
+            <p className="text-sm">{post.text_content}</p>
+          </div>
         ))}
       </div>
     </div>
