@@ -5,18 +5,42 @@ import toast from 'react-hot-toast';
 
 export default function Register() {
   const [formData, setFormData] = useState({ username: '', email: '', password: '', privacy: 'public' });
+  const [loading, setLoading] = useState(false);
+  const [errorMessages, setErrorMessages] = useState([]);
   const navigate = useNavigate();
 
   const handleChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
 
+  const validateForm = () => {
+    const errors = [];
+    if (!formData.username) errors.push('Username is required');
+    if (!formData.email) errors.push('Email is required');
+    if (!formData.password) errors.push('Password is required');
+    if (formData.password && formData.password.length < 6) errors.push('Password must be at least 6 characters');
+    return errors;
+  };
+
   const handleSubmit = async e => {
     e.preventDefault();
+    setErrorMessages([]); // Reset errors
+
+    const errors = validateForm();
+    if (errors.length > 0) {
+      setErrorMessages(errors);
+      return;
+    }
+
+    setLoading(true);
     try {
       await register(formData);
-      toast.success("Registered successfully!");
+      toast.success('Registered successfully!');
       navigate('/login');
-    } catch {
-      toast.error("Registration failed");
+    } catch (err) {
+      console.error(err);
+      toast.error('Registration failed');
+      setErrorMessages([err?.response?.data?.detail || 'Registration failed']);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -25,14 +49,54 @@ export default function Register() {
       <div className="max-w-md w-full bg-white shadow-lg rounded p-6">
         <h2 className="text-2xl font-bold mb-6 text-center">Register</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input name="username" placeholder="Username" className="w-full p-2 border rounded" onChange={handleChange} />
-          <input name="email" type="email" placeholder="Email" className="w-full p-2 border rounded" onChange={handleChange} />
-          <input name="password" type="password" placeholder="Password" className="w-full p-2 border rounded" onChange={handleChange} />
-          <select name="privacy" className="w-full p-2 border rounded" onChange={handleChange}>
+          {errorMessages.length > 0 && (
+            <div className="bg-red-100 text-red-700 p-2 rounded">
+              <ul>
+                {errorMessages.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <input
+            name="username"
+            placeholder="Username"
+            className="w-full p-2 border rounded"
+            onChange={handleChange}
+            value={formData.username}
+          />
+          <input
+            name="email"
+            type="email"
+            placeholder="Email"
+            className="w-full p-2 border rounded"
+            onChange={handleChange}
+            value={formData.email}
+          />
+          <input
+            name="password"
+            type="password"
+            placeholder="Password"
+            className="w-full p-2 border rounded"
+            onChange={handleChange}
+            value={formData.password}
+          />
+          <select
+            name="privacy"
+            className="w-full p-2 border rounded"
+            onChange={handleChange}
+            value={formData.privacy}
+          >
             <option value="public">Public</option>
             <option value="private">Private</option>
           </select>
-          <button className="w-full bg-green-600 text-white py-2 px-4 rounded">Register</button>
+          <button
+            type="submit"
+            className="w-full bg-green-600 text-white py-2 px-4 rounded"
+            disabled={loading}
+          >
+            {loading ? 'Registering...' : 'Register'}
+          </button>
         </form>
       </div>
     </div>

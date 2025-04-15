@@ -1,4 +1,5 @@
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 const baseURL = 'http://127.0.0.1:8000';
 
@@ -41,7 +42,15 @@ API.interceptors.response.use(
         // Refresh token also expired → force logout
         localStorage.clear();
         window.location.href = '/login';
+        toast.error("Session expired. Please log in again.");
       }
+    }
+
+    // Handle other errors
+    if (error.response) {
+      toast.error(`Error: ${error.response.status} - ${error.response.statusText}`);
+    } else {
+      toast.error("Network error. Please try again later.");
     }
 
     return Promise.reject(error);

@@ -13,8 +13,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <GoogleOAuthProvider clientId="524371104998-ep4u64k0hh08niem4ed0sgldq5e88g4b.apps.googleusercontent.com">
       <BrowserRouter>
+        <Toaster position="top-right" />
         <AuthProvider>
-          <Toaster position="top-right" />
           <App />
         </AuthProvider>
       </BrowserRouter>

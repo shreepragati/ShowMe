@@ -57,3 +57,17 @@ class CurrentUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'profile_pic']
+
+# userProfile/serializers.py
+from django.contrib.auth import get_user_model
+from rest_framework import serializers
+from .models import Profile  # if you have a separate Profile model
+
+User = get_user_model()
+
+class UserListSerializer(serializers.ModelSerializer):
+    profile = serializers.StringRelatedField()  # or create a nested serializer if needed
+
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'profile']  # Add other fields as required

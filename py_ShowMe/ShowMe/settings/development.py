@@ -40,12 +40,13 @@ INSTALLED_APPS = [
     'posts',
     'friends',
     'profileview',
+    'search',
+    'follows',
 
     # Dev tools
     'django_extensions',
 
     #Search
-    'search',
     'django_elasticsearch_dsl',
 ]
 
