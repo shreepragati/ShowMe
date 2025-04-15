@@ -42,7 +42,7 @@ export default function Home() {
     <div className="p-4">
       <div className="flex justify-center mb-6">
       <UserSearch />
-    n </div>
+    </div>
       <h2 className="text-xl font-bold mb-4">Feed</h2>
       {posts.map(post => (
         <PostCard
