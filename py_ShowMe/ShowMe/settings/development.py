@@ -48,6 +48,10 @@ INSTALLED_APPS = [
 
     #Search
     'django_elasticsearch_dsl',
+
+    #Messaging
+    "channels",
+    "messaging",
 ]
 
 MIDDLEWARE = [
@@ -146,5 +150,16 @@ CORS_ALLOW_CREDENTIALS = True
 ELASTICSEARCH_DSL = {
     'default': {
         'hosts': 'http://localhost:9200'   # Make sure Elasticsearch is running on this
+    },
+}
+
+ASGI_APPLICATION = "ShowMe.asgi.application"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("127.0.0.1", 6379)],
+        },
     },
 }
