@@ -6,6 +6,8 @@ from django.shortcuts import get_object_or_404
 from userProfile.models import Profile
 from .models import Follow
 from django.contrib.auth import get_user_model
+from .serializers import FollowSerializer, SimpleUserSerializer
+
 
 User = get_user_model()
 
@@ -19,16 +21,21 @@ class FollowUser(APIView):
         if follower == following:
             return Response({"message": "You can't follow yourself."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if Follow.objects.filter(follower=follower, following=following).exists():
-            return Response({"message": "Follow request already sent or you already follow this user."}, status=status.HTTP_400_BAD_REQUEST)
+        existing_follow = Follow.objects.filter(follower=follower, following=following).first()
+        if existing_follow:
+            if existing_follow.accepted:
+                return Response({"message": f"You already follow {following.username}."}, status=status.HTTP_200_OK)
+            else:
+                return Response({"message": f"Follow request to {following.username} already sent. Awaiting approval."}, status=status.HTTP_200_OK)
 
         profile = following.profile
         if profile.privacy == 'public':
             Follow.objects.create(follower=follower, following=following, accepted=True)
-            return Response({"message": "Followed successfully!"})
+            return Response({"message": f"Followed {following.username} successfully!"})
         else:
             Follow.objects.create(follower=follower, following=following, accepted=False)
-            return Response({"message": "Follow request sent. Awaiting approval."})
+            return Response({"message": f"Follow request sent to {following.username}."})
+
 
 class AcceptFollowRequest(APIView):
     permission_classes = [IsAuthenticated]
@@ -80,23 +87,28 @@ class MyFollows(APIView):
 
         return Response({
             "followers": [
-                {"id": f.follower.id, "username": f.follower.username}
+                SimpleUserSerializer(f.follower).data
                 for f in followers_qs
             ],
             "following": [
-                {"id": f.following.id, "username": f.following.username}
+                SimpleUserSerializer(f.following).data
                 for f in following_qs
             ],
-            "mutual_follows": [
-                {"id": u.id, "username": u.username}
-                for u in User.objects.filter(id__in=mutual_ids)
-            ],
+            "mutual_follows": SimpleUserSerializer(
+                User.objects.filter(id__in=mutual_ids), many=True
+            ).data,
             "requests_sent": [
-                {"id": f.id, "to_user_id": f.following.id, "username": f.following.username}
+                {
+                    "id": f.id,
+                    "to_user": SimpleUserSerializer(f.following).data
+                }
                 for f in requests_sent_qs
             ],
             "requests_received": [
-                {"id": f.id, "from_user_id": f.follower.id, "username": f.follower.username}
+                {
+                    "id": f.id,
+                    "from_user": SimpleUserSerializer(f.follower).data
+                }
                 for f in requests_received_qs
             ]
         })

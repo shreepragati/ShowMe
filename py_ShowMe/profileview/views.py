@@ -1,15 +1,12 @@
-# profileview/views.py
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
+from django.contrib.auth.models import User
 from userProfile.models import Profile
 from posts.models import Post
-from friends.models import Friendship
-from django.contrib.auth.models import User
+from follows.models import Follow  # ✅ Updated
 from .serializers import ProfileSerializer, PostSerializer
-
 
 class UserDetailWithPostsView(APIView):
     permission_classes = [IsAuthenticated]
@@ -19,31 +16,49 @@ class UserDetailWithPostsView(APIView):
         target_profile = get_object_or_404(Profile, user=target_user)
         requesting_user = request.user
 
-        # Determine relationship
+        # Relationship logic
         if requesting_user == target_user:
-            friend_status = "self"
+            follow_status = "self"
             can_view_posts = True
-        elif Friendship.objects.filter(sender=requesting_user, receiver=target_user, accepted=True).exists() or \
-             Friendship.objects.filter(sender=target_user, receiver=requesting_user, accepted=True).exists():
-            friend_status = "friend"
+        elif Follow.objects.filter(follower=requesting_user, following=target_user, accepted=True).exists() and \
+             Follow.objects.filter(follower=target_user, following=requesting_user, accepted=True).exists():
+            follow_status = "mutual"
             can_view_posts = True
-        elif Friendship.objects.filter(sender=requesting_user, receiver=target_user, accepted=False).exists():
-            friend_status = "requested"
+        elif Follow.objects.filter(follower=requesting_user, following=target_user, accepted=False).exists():
+            follow_status = "requested"
             can_view_posts = False
+        elif Follow.objects.filter(follower=target_user, following=requesting_user, accepted=False).exists():
+            follow_status = "request_received"
+            can_view_posts = False
+        elif target_profile.privacy == 'public':
+            follow_status = "not_following"
+            can_view_posts = True
         else:
-            friend_status = "not_friend"
-            can_view_posts = target_profile.privacy == 'public'
+            follow_status = "not_following"
+            can_view_posts = False
+
+        # Post logic
+        posts_qs = Post.objects.filter(user=target_user) if can_view_posts else Post.objects.none()
+        post_data = PostSerializer(posts_qs, many=True).data
+
+        # Counts
+        followers_count = Follow.objects.filter(following=target_user, accepted=True).count()
+        following_count = Follow.objects.filter(follower=target_user, accepted=True).count()
+        posts_count = posts_qs.count()
+
+        # Mutual follows
+        my_following_ids = Follow.objects.filter(follower=requesting_user, accepted=True).values_list('following_id', flat=True)
+        target_following_ids = Follow.objects.filter(follower=target_user, accepted=True).values_list('following_id', flat=True)
+        mutual_follow_count = len(set(my_following_ids) & set(target_following_ids))
 
         profile_data = ProfileSerializer(target_profile).data
 
-        if can_view_posts:
-            posts = Post.objects.filter(user=target_user)
-            post_data = PostSerializer(posts, many=True).data
-        else:
-            post_data = []
-
         return Response({
             "profile": profile_data,
-            "posts": post_data,
-            "friend_status": friend_status
+            "follow_status": follow_status,
+            "followers_count": followers_count,
+            "following_count": following_count,
+            "mutual_follow_count": mutual_follow_count,
+            "posts_count": posts_count,
+            "posts": post_data
         })

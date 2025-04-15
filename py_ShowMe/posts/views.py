@@ -6,33 +6,31 @@ from django.db.models import Q
 from .models import Post
 from .serializers import PostSerializer
 from userProfile.models import Profile
-from friends.models import Friendship
 from rest_framework import status
+
+from follows.models import Follow  
 
 class PostListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        # Fetch public users
+        user = request.user
+
+        # Get all public users
         public_users = Profile.objects.filter(privacy=Profile.PUBLIC).values_list('user', flat=True)
 
-        # Fetch private users who are friends with the logged-in user
-        friends = Friendship.objects.filter(
-            Q(sender=request.user) | Q(receiver=request.user), accepted=True
-        ).values_list('sender', 'receiver')
+        # Get private users that the current user follows AND the follow is accepted
+        private_following = Follow.objects.filter(
+            follower=user,
+            accepted=True,
+            following__profile__privacy=Profile.PRIVATE
+        ).values_list('following', flat=True)
 
-        # Extract unique friend IDs
-        friend_ids = set()
-        for sender, receiver in friends:
-            if sender != request.user.id:
-                friend_ids.add(sender)
-            if receiver != request.user.id:
-                friend_ids.add(receiver)
+        # Combine both sets
+        visible_user_ids = set(public_users) | set(private_following) | {user.id}
 
-        # Fetch posts from public users + friends who are private
-        posts = Post.objects.filter(
-            Q(user__in=public_users) | Q(user__in=friend_ids)
-        ).order_by('-created_at')
+        # Fetch posts
+        posts = Post.objects.filter(user__in=visible_user_ids).order_by('-created_at')
 
         serializer = PostSerializer(posts, many=True)
         return Response(serializer.data)
@@ -43,6 +41,7 @@ class PostListCreateView(APIView):
             serializer.save(user=request.user)
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
+
 
 class PostDetailView(APIView):
     permission_classes = [IsAuthenticated]

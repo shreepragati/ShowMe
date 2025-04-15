@@ -1,48 +1,61 @@
 import { useState, useEffect } from 'react';
-import { sendFriendRequest, unfollowFriend, cancelFriendRequest } from '../services/friends';
-import { useFriendContext } from '../context/FriendContext';
+import { sendFollowRequest, cancelFollowRequest, unfollowUser } from '../services/follows';
+import { useFollowContext } from '../context/FollowContext';
+import { Link } from 'react-router-dom';
 
 const baseURL = 'http://127.0.0.1:8000';
 
-const PostCard = ({ post, currentUserId, friends, pendingRequests, sentRequests }) => {
+const PostCard = ({ post, currentUserId }) => {
   const [ownPost, setOwnPost] = useState(false);
-  const [buttonState, setButtonState] = useState('Follow'); // 'Follow', 'Requested', 'Following'
-  const { triggerRefresh } = useFriendContext();
+  const [buttonState, setButtonState] = useState('Follow'); // 'Follow', 'Pending', 'Following'
+  const [loading, setLoading] = useState(false);
+
+  const { following, sentRequests, triggerRefresh } = useFollowContext(); // Follow data from context
 
   const postUserId = post.user_id || post.user?.id;
 
   useEffect(() => {
-    if (currentUserId && postUserId) {
-      setOwnPost(Number(postUserId) === Number(currentUserId));
-    }
-  }, [currentUserId, postUserId]);
+    if (!postUserId || !currentUserId) return;
 
-  useEffect(() => {
-    if (friends.includes(postUserId)) {
+    if (Number(postUserId) === Number(currentUserId)) {
+      setOwnPost(true); // This is the logged-in user's post
+      return;
+    }
+
+    if (following.includes(postUserId)) {
       setButtonState('Following');
     } else if (sentRequests.includes(postUserId)) {
-      setButtonState('Requested');
+      setButtonState('Pending');
     } else {
       setButtonState('Follow');
     }
-  }, [friends, sentRequests, postUserId]);
+  }, [following, sentRequests, postUserId, currentUserId]);
 
   const handleButtonClick = async () => {
+    if (loading || ownPost) return;
+    setLoading(true);
+
     try {
       if (buttonState === 'Follow') {
-        await sendFriendRequest(postUserId);
-        setButtonState('Requested');
-      } else if (buttonState === 'Requested') {
-        await cancelFriendRequest(postUserId);
+        await sendFollowRequest(postUserId);
+        if (post.privacy === 'public') {
+          setButtonState('Following'); // Direct follow
+        } else {
+          setButtonState('Pending'); // Request sent
+        }
+      } else if (buttonState === 'Pending') {
+        await cancelFollowRequest(postUserId);
         setButtonState('Follow');
       } else if (buttonState === 'Following') {
-        await unfollowFriend(postUserId);
+        await unfollowUser(postUserId);
         setButtonState('Follow');
       }
 
-      triggerRefresh();
+      triggerRefresh(); // Refresh follow context state
     } catch (err) {
-      console.error('Action failed:', err);
+      console.error('Follow action failed:', err.message || err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -55,21 +68,36 @@ const PostCard = ({ post, currentUserId, friends, pendingRequests, sentRequests 
             alt="Profile"
             className="w-8 h-8 rounded-full object-cover"
           />
-          <p className="font-semibold">{post.user?.username || post.user}</p>
+          <Link
+            to={`/profile/${postUserId}`}
+            className="font-semibold hover:underline"
+          >
+            {post.user?.username || post.user}
+          </Link>
         </div>
 
         {!ownPost && (
           <button
             onClick={handleButtonClick}
-            className={`text-sm px-3 py-1 rounded transition ${
-              buttonState === 'Follow'
+            disabled={loading || buttonState === 'Following'}
+            title={
+              buttonState === 'Pending'
+                ? 'Click to cancel follow request'
+                : buttonState === 'Following'
+                  ? 'Already following'
+                  : 'Send follow request'
+            }
+            className={`text-sm px-3 py-1 rounded transition
+              ${buttonState === 'Follow'
                 ? 'bg-blue-500 text-white hover:bg-blue-600'
-                : buttonState === 'Requested'
-                ? 'text-yellow-400 hover:bg-yellow-500'
-                : 'text-green-600 hover:bg-green-200'
-            }`}
+                : buttonState === 'Pending'
+                  ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                  : 'bg-green-100 text-green-700'
+              }
+              ${loading || buttonState === 'Following' ? 'opacity-50 cursor-not-allowed' : ''}
+            `}
           >
-            {buttonState}
+            {loading ? 'Loading...' : buttonState}
           </button>
         )}
       </div>
