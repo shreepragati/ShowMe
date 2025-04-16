@@ -46,9 +46,10 @@ export default function ProfilePage() {
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
+
     setFormData(prev => ({
       ...prev,
-      [name]: files ? files[0] : value,
+      [name]: files && files.length > 0 ? files[0] : value,
     }));
   };
 
@@ -65,33 +66,38 @@ export default function ProfilePage() {
 
     try {
       const data = new FormData();
+
       for (const key in formData) {
-        data.append(key, formData[key]);
+        if (key === 'profile_pic' && formData.profile_pic instanceof File) {
+          data.append('profile_pic', formData.profile_pic);
+        } else if (key !== 'profile_pic') {
+          data.append(key, formData[key]);
+        }
       }
 
       await updateProfile(data);
 
       const refreshed = await fetchProfileWithPosts(user.username);
-      const refreshedData = refreshed.data;
+      const newData = refreshed.data;
+      const newProfile = newData.profile;
 
       setProfile({
-        ...refreshedData.profile,
-        followers_count: refreshedData.followers_count,
-        following_count: refreshedData.following_count,
-        mutual_follow_count: refreshedData.mutual_follow_count,
+        ...newProfile,
+        followers_count: newData.followers_count,
+        following_count: newData.following_count,
+        mutual_follow_count: newData.mutual_follow_count,
       });
 
       setFormData({
-        email: refreshedData.profile.email || '',
-        first_name: refreshedData.profile.first_name || '',
-        last_name: refreshedData.profile.last_name || '',
-        dob: refreshedData.profile.dob || '',
-        bio: refreshedData.profile.bio || '',
-        privacy: refreshedData.profile.privacy || 'public',
-        profile_pic: refreshedData.profile.profile_pic || null,
+        email: newProfile.email || '',
+        first_name: newProfile.first_name || '',
+        last_name: newProfile.last_name || '',
+        dob: newProfile.dob || '',
+        bio: newProfile.bio || '',
+        privacy: newProfile.privacy || 'public',
+        profile_pic: newProfile.profile_pic || null,
       });
 
-      setMyPosts(refreshedData.posts || []);
       setEditing(false);
       toast.success('Profile updated successfully!');
     } catch (err) {
@@ -104,7 +110,6 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-3xl mx-auto p-4">
-      {/* Profile Header */}
       <div className="flex flex-col items-center text-center">
         <img
           src={profile.profile_pic ? `${baseURL}${profile.profile_pic}` : '/default-avatar.png'}
@@ -139,10 +144,20 @@ export default function ProfilePage() {
         </button>
       </div>
 
-      {/* Editable Fields */}
       {editing ? (
         <form onSubmit={handleSubmit} className="space-y-4 mt-6">
           <input type="file" name="profile_pic" onChange={handleChange} />
+          {formData.profile_pic && (
+            <img
+              src={
+                formData.profile_pic instanceof File
+                  ? URL.createObjectURL(formData.profile_pic)
+                  : `${baseURL}${formData.profile_pic}`
+              }
+              alt="Preview"
+              className="w-24 h-24 rounded-full object-cover border mt-2"
+            />
+          )}
           {['email', 'first_name', 'last_name', 'dob', 'bio'].map(field => (
             <div key={field}>
               <label className="capitalize">{field.replace('_', ' ')}:</label>
@@ -178,7 +193,6 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Followers / Following */}
       {showFollowers && (
         <div className="mt-6">
           <h3 className="font-semibold mb-2">Followers</h3>
@@ -192,7 +206,6 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Posts Section */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-8 border-t pt-4">
         {myPosts.map(post => (
           <div key={post.id} className="border p-2 rounded shadow">
