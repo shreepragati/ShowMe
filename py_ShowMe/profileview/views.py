@@ -16,37 +16,40 @@ class UserDetailWithPostsView(APIView):
         target_profile = get_object_or_404(Profile, user=target_user)
         requesting_user = request.user
 
-        # Relationship logic
+        # Initialize
+        follow_status = "not_following"
+        can_view_posts = False
+
         if requesting_user == target_user:
             follow_status = "self"
             can_view_posts = True
-        elif Follow.objects.filter(follower=requesting_user, following=target_user, accepted=True).exists() and \
-             Follow.objects.filter(follower=target_user, following=requesting_user, accepted=True).exists():
-            follow_status = "mutual"
-            can_view_posts = True
-        elif Follow.objects.filter(follower=requesting_user, following=target_user, accepted=False).exists():
-            follow_status = "requested"
-            can_view_posts = False
-        elif Follow.objects.filter(follower=target_user, following=requesting_user, accepted=False).exists():
-            follow_status = "request_received"
-            can_view_posts = False
-        elif target_profile.privacy == 'public':
-            follow_status = "not_following"
-            can_view_posts = True
-        else:
-            follow_status = "not_following"
-            can_view_posts = False
 
-        # Post logic
+        else:
+            is_following = Follow.objects.filter(follower=requesting_user, following=target_user, accepted=True).exists()
+            is_followed_back = Follow.objects.filter(follower=target_user, following=requesting_user, accepted=True).exists()
+            has_sent_request = Follow.objects.filter(follower=requesting_user, following=target_user, accepted=False).exists()
+            has_received_request = Follow.objects.filter(follower=target_user, following=requesting_user, accepted=False).exists()
+
+            if is_following and is_followed_back:
+                follow_status = "mutual"
+                can_view_posts = True
+            elif has_sent_request:
+                follow_status = "requested"
+            elif has_received_request:
+                follow_status = "request_received"
+            elif target_profile.privacy == 'public':
+                follow_status = "not_following"
+                can_view_posts = True
+            else:
+                follow_status = "not_following"
+
         posts_qs = Post.objects.filter(user=target_user) if can_view_posts else Post.objects.none()
         post_data = PostSerializer(posts_qs, many=True).data
 
-        # Counts
         followers_count = Follow.objects.filter(following=target_user, accepted=True).count()
         following_count = Follow.objects.filter(follower=target_user, accepted=True).count()
         posts_count = posts_qs.count()
 
-        # Mutual follows
         my_following_ids = Follow.objects.filter(follower=requesting_user, accepted=True).values_list('following_id', flat=True)
         target_following_ids = Follow.objects.filter(follower=target_user, accepted=True).values_list('following_id', flat=True)
         mutual_follow_count = len(set(my_following_ids) & set(target_following_ids))

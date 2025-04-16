@@ -38,7 +38,6 @@ INSTALLED_APPS = [
     # Your apps
     'userProfile',
     'posts',
-    'friends',
     'profileview',
     'search',
     'follows',
