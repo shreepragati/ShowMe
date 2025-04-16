@@ -8,3 +8,7 @@ export const createPost = (formData) =>
       'Content-Type': 'multipart/form-data',
     },
   });
+
+// ✅ NEW: Delete post by ID
+export const deletePost = (postId) =>
+  API.delete(`/posts/posts/${postId}/`);

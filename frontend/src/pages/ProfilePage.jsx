@@ -1,5 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { fetchProfileWithPosts, updateProfile } from '../services/profile';
+import { deletePost } from '../services/posts'; // <-- make sure this path is correct
 import { AuthContext } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -12,6 +13,7 @@ export default function ProfilePage() {
   const [myPosts, setMyPosts] = useState([]);
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
+  const [menuOpenPostId, setMenuOpenPostId] = useState(null); // For 3-dot menu
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
@@ -103,6 +105,17 @@ export default function ProfilePage() {
     } catch (err) {
       console.error('Update failed', err);
       toast.error('Failed to update profile.');
+    }
+  };
+
+  const handleDeletePost = async (postId) => {
+    try {
+      await deletePost(postId);
+      toast.success('Post deleted!');
+      setMyPosts(prev => prev.filter(post => post.id !== postId));
+    } catch (err) {
+      console.error('Failed to delete post:', err);
+      toast.error('Failed to delete post');
     }
   };
 
@@ -208,7 +221,27 @@ export default function ProfilePage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-8 border-t pt-4">
         {myPosts.map(post => (
-          <div key={post.id} className="border p-2 rounded shadow">
+          <div key={post.id} className="relative border p-2 rounded shadow">
+            {/* 3 Dots Button */}
+            <button
+              onClick={() =>
+                setMenuOpenPostId(menuOpenPostId === post.id ? null : post.id)
+              }
+              className="absolute top-1 right-1 text-gray-500 hover:text-black"
+            >
+              &#x22EE;
+            </button>
+
+            {/* Delete Button */}
+            {menuOpenPostId === post.id && (
+              <button
+                onClick={() => handleDeletePost(post.id)}
+                className="absolute top-6 right-1 bg-gray-600 hover:bg-red-500 text-white px-2 py-1 text-xs rounded shadow"
+              >
+                Delete
+              </button>
+            )}
+
             {post.image && (
               <img
                 src={`${baseURL}${post.image}`}
