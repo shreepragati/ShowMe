@@ -12,5 +12,5 @@ urlpatterns = [
     path('search/', include('search.urls')),
     path('profileview/', include('profileview.urls')),
     path('follows/',include('follows.urls')),
-    path('chat',include('chat.urls'))
+    path('chat/',include('chat.urls'))
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -60,6 +60,7 @@ export default function Follows() {
   const renderUserCard = (user) => {
     const alreadySent = sentRequestIds.includes(user.id);
     const alreadyFollowing = following.map(f => f.id).includes(user.id);
+    console.log('Username for chat link:', user.username);
 
     return (
       <div key={user.id} className="flex items-center justify-between bg-white p-3 shadow rounded mb-3">
@@ -74,18 +75,29 @@ export default function Follows() {
           </Link>
         </div>
 
-        {!alreadyFollowing && (
-          <button
-            onClick={() => followBack(user)}
-            disabled={alreadySent}
-            className={`text-sm px-3 py-1 rounded ${alreadySent ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
-          >
-            {alreadySent ? 'Pending' : 'Follow Back'}
-          </button>
-        )}
+        <div className="flex gap-2">
+          {!alreadyFollowing && (
+            <button
+              onClick={() => followBack(user)}
+              disabled={alreadySent}
+              className={`text-sm px-3 py-1 rounded ${alreadySent ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+            >
+              {alreadySent ? 'Pending' : 'Follow Back'}
+            </button>
+          )}
+
+          {mutuals.find(m => m.id === user.id) && (
+            <Link to={`/chat/${user.username}`}
+              className="text-sm px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded"
+            >
+              Chat
+            </Link>
+          )}
+        </div>
       </div>
     );
   };
+
 
   if (loading) return <p className="p-4">Loading follow data...</p>;
   if (error) return <p className="p-4 text-red-500">{error}</p>;

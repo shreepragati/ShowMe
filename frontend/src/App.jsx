@@ -11,6 +11,7 @@ import NavBar from './components/NavBar';
 import ProfilePage from './pages/ProfilePage';
 import UserProfile from './pages/UserProfile';
 import Follows from './pages/Follows';
+import ChatPage from './pages/ChatPage';
 
 function ProtectedRoute({ children }) {
   const isAuthenticated = !!localStorage.getItem('access');
@@ -30,6 +31,8 @@ export default function App() {
           <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           <Route path="/profile/:username" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
           <Route path="/follows" element={<ProtectedRoute><Follows /></ProtectedRoute>} />
+          <Route path="/chat/:username" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+
           <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </FollowContextProvider>
