@@ -118,7 +118,7 @@ export default function Follows() {
         <ul className="space-y-3 mb-6">
           {requestsReceived.map(req => (
             <li key={req.id} className="flex justify-between items-center bg-white p-3 shadow rounded">
-              <span><strong>{req.username}</strong> wants to follow you</span>
+              <span><strong>{req.from_user.username}</strong> wants to follow you</span>
               <button
                 onClick={() => acceptRequest(req.id)}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
