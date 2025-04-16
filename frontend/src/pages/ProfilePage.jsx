@@ -46,9 +46,10 @@ export default function ProfilePage() {
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
+
     setFormData(prev => ({
       ...prev,
-      [name]: files ? files[0] : value,
+      [name]: files && files.length > 0 ? files[0] : value,
     }));
   };
 
@@ -67,20 +68,35 @@ export default function ProfilePage() {
       const data = new FormData();
 
       for (const key in formData) {
-        // ✅ Only append profile_pic if it's a File (i.e., newly uploaded)
         if (key === 'profile_pic' && formData.profile_pic instanceof File) {
           data.append('profile_pic', formData.profile_pic);
         } else if (key !== 'profile_pic') {
           data.append(key, formData[key]);
         }
-
       }
 
       await updateProfile(data);
 
-      const refreshed = await fetchProfile();
-      setProfile(refreshed.data);
-      setFormData(refreshed.data);
+      const refreshed = await fetchProfileWithPosts(user.username);
+      const newData = refreshed.data;
+      const newProfile = newData.profile;
+
+      setProfile({
+        ...newProfile,
+        followers_count: newData.followers_count,
+        following_count: newData.following_count,
+        mutual_follow_count: newData.mutual_follow_count,
+      });
+
+      setFormData({
+        email: newProfile.email || '',
+        first_name: newProfile.first_name || '',
+        last_name: newProfile.last_name || '',
+        dob: newProfile.dob || '',
+        bio: newProfile.bio || '',
+        privacy: newProfile.privacy || 'public',
+        profile_pic: newProfile.profile_pic || null,
+      });
 
       setEditing(false);
       toast.success('Profile updated successfully!');
@@ -90,12 +106,10 @@ export default function ProfilePage() {
     }
   };
 
-
   if (!user || !profile) return <div className="text-center py-10">Loading profile...</div>;
 
   return (
     <div className="max-w-3xl mx-auto p-4">
-      {/* Profile Header */}
       <div className="flex flex-col items-center text-center">
         <img
           src={profile.profile_pic ? `${baseURL}${profile.profile_pic}` : '/default-avatar.png'}
@@ -130,17 +144,20 @@ export default function ProfilePage() {
         </button>
       </div>
 
-      {/* Editable Fields */}
       {editing ? (
         <form onSubmit={handleSubmit} className="space-y-4 mt-6">
           <input type="file" name="profile_pic" onChange={handleChange} />
-          {formData.profile_pic && formData.profile_pic instanceof File ? (
+          {formData.profile_pic && (
             <img
-              src={URL.createObjectURL(formData.profile_pic)}
+              src={
+                formData.profile_pic instanceof File
+                  ? URL.createObjectURL(formData.profile_pic)
+                  : `${baseURL}${formData.profile_pic}`
+              }
               alt="Preview"
               className="w-24 h-24 rounded-full object-cover border mt-2"
             />
-          ) : null}
+          )}
           {['email', 'first_name', 'last_name', 'dob', 'bio'].map(field => (
             <div key={field}>
               <label className="capitalize">{field.replace('_', ' ')}:</label>
@@ -176,7 +193,6 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Followers / Following */}
       {showFollowers && (
         <div className="mt-6">
           <h3 className="font-semibold mb-2">Followers</h3>
@@ -190,7 +206,6 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* Posts Section */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-8 border-t pt-4">
         {myPosts.map(post => (
           <div key={post.id} className="border p-2 rounded shadow">
