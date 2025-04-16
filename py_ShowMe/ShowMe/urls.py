@@ -8,7 +8,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('userProfile.urls')),
     path('posts/', include('posts.urls', namespace='posts')),
-    path('friends/', include('friends.urls', namespace='friends')),
     path('auth/', include('allauth.socialaccount.urls')),  # social login
     path('search/', include('search.urls')),
     path('profileview/', include('profileview.urls')),
