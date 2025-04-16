@@ -30,24 +30,26 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
         fields = ['username', 'email', 'first_name', 'last_name', 'bio', 'dob', 'profile_pic', 'privacy']
 
     def update(self, instance, validated_data):
-        # Update User model fields
+        # 1. Update User model fields
         user_data = validated_data.pop('user', {})
         for attr, value in user_data.items():
             setattr(instance.user, attr, value)
         instance.user.save()
 
-        # Handle profile picture replacement
-        new_picture = validated_data.get("profile_pic", None)
-        if new_picture and instance.profile_pic:
-            old_path = instance.profile_pic.path
-            if os.path.exists(old_path):
-                os.remove(old_path)
+        # 2. Handle profile_pic update
+        if 'profile_pic' in validated_data:
+            new_picture = validated_data.get("profile_pic")
+            if new_picture and instance.profile_pic:
+                old_path = instance.profile_pic.path
+                if os.path.exists(old_path):
+                    os.remove(old_path)
+            instance.profile_pic = new_picture  # set new pic (can be None)
 
-        # Update Profile model fields
+        # 3. Update other Profile fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
-        instance.save()
 
+        instance.save()
         return instance
 
 

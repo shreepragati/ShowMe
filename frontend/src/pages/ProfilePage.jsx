@@ -65,33 +65,23 @@ export default function ProfilePage() {
 
     try {
       const data = new FormData();
+
       for (const key in formData) {
-        data.append(key, formData[key]);
+        // ✅ Only append profile_pic if it's a File (i.e., newly uploaded)
+        if (key === 'profile_pic' && formData.profile_pic instanceof File) {
+          data.append('profile_pic', formData.profile_pic);
+        } else if (key !== 'profile_pic') {
+          data.append(key, formData[key]);
+        }
+
       }
 
       await updateProfile(data);
 
-      const refreshed = await fetchProfileWithPosts(user.username);
-      const refreshedData = refreshed.data;
+      const refreshed = await fetchProfile();
+      setProfile(refreshed.data);
+      setFormData(refreshed.data);
 
-      setProfile({
-        ...refreshedData.profile,
-        followers_count: refreshedData.followers_count,
-        following_count: refreshedData.following_count,
-        mutual_follow_count: refreshedData.mutual_follow_count,
-      });
-
-      setFormData({
-        email: refreshedData.profile.email || '',
-        first_name: refreshedData.profile.first_name || '',
-        last_name: refreshedData.profile.last_name || '',
-        dob: refreshedData.profile.dob || '',
-        bio: refreshedData.profile.bio || '',
-        privacy: refreshedData.profile.privacy || 'public',
-        profile_pic: refreshedData.profile.profile_pic || null,
-      });
-
-      setMyPosts(refreshedData.posts || []);
       setEditing(false);
       toast.success('Profile updated successfully!');
     } catch (err) {
@@ -99,6 +89,7 @@ export default function ProfilePage() {
       toast.error('Failed to update profile.');
     }
   };
+
 
   if (!user || !profile) return <div className="text-center py-10">Loading profile...</div>;
 
@@ -143,6 +134,13 @@ export default function ProfilePage() {
       {editing ? (
         <form onSubmit={handleSubmit} className="space-y-4 mt-6">
           <input type="file" name="profile_pic" onChange={handleChange} />
+          {formData.profile_pic && formData.profile_pic instanceof File ? (
+            <img
+              src={URL.createObjectURL(formData.profile_pic)}
+              alt="Preview"
+              className="w-24 h-24 rounded-full object-cover border mt-2"
+            />
+          ) : null}
           {['email', 'first_name', 'last_name', 'dob', 'bio'].map(field => (
             <div key={field}>
               <label className="capitalize">{field.replace('_', ' ')}:</label>
