@@ -1,6 +1,8 @@
 import { useState, useEffect, useContext } from 'react';
+import { Link } from 'react-router-dom';
 import { fetchProfileWithPosts, updateProfile } from '../services/profile';
-import { deletePost } from '../services/posts'; // <-- make sure this path is correct
+import { fetchFollows } from '../services/follows';
+import { deletePost } from '../services/posts';
 import { AuthContext } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -13,7 +15,9 @@ export default function ProfilePage() {
   const [myPosts, setMyPosts] = useState([]);
   const [showFollowers, setShowFollowers] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
-  const [menuOpenPostId, setMenuOpenPostId] = useState(null); // For 3-dot menu
+  const [followersList, setFollowersList] = useState([]);
+  const [followingList, setFollowingList] = useState([]);
+  const [menuOpenPostId, setMenuOpenPostId] = useState(null);
   const { user } = useContext(AuthContext);
 
   useEffect(() => {
@@ -46,9 +50,18 @@ export default function ProfilePage() {
       .catch(console.error);
   }, [user]);
 
+  const fetchFollowLists = async () => {
+    try {
+      const res = await fetchFollows();
+      setFollowersList(res.data.followers || []);
+      setFollowingList(res.data.following || []);
+    } catch (err) {
+      console.error('Failed to fetch follow lists', err);
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-
     setFormData(prev => ({
       ...prev,
       [name]: files && files.length > 0 ? files[0] : value,
@@ -68,11 +81,10 @@ export default function ProfilePage() {
 
     try {
       const data = new FormData();
-
       for (const key in formData) {
         if (key === 'profile_pic' && formData.profile_pic instanceof File) {
           data.append('profile_pic', formData.profile_pic);
-        } else if (key !== 'profile_pic') {
+        } else {
           data.append(key, formData[key]);
         }
       }
@@ -119,6 +131,26 @@ export default function ProfilePage() {
     }
   };
 
+  const renderUserCard = (user) => (
+    <div
+      key={user.id}
+      className="flex items-center space-x-3 bg-white shadow p-3 rounded mb-2"
+    >
+      <img
+        src={user.profile_pic ? `${baseURL}${user.profile_pic}` : '/default-avatar.png'}
+        alt="Profile"
+        className="w-10 h-10 rounded-full object-cover"
+      />
+      <Link
+        to={`/profile/${user.username}`} // ✅ fixed here
+        className="font-medium text-blue-600 hover:underline"
+      >
+        {user.username}
+      </Link>
+    </div>
+  );
+  
+
   if (!user || !profile) return <div className="text-center py-10">Loading profile...</div>;
 
   return (
@@ -135,15 +167,25 @@ export default function ProfilePage() {
             <p className="font-bold">{myPosts.length}</p>
             <p className="text-sm text-gray-500">Posts</p>
           </div>
-          <div className="text-center cursor-pointer" onClick={() => {
-            setShowFollowers(true); setShowFollowing(false);
-          }}>
+          <div
+            className="text-center cursor-pointer"
+            onClick={() => {
+              setShowFollowers(!showFollowers);
+              setShowFollowing(false);
+              fetchFollowLists();
+            }}
+          >
             <p className="font-bold">{profile.followers_count || 0}</p>
             <p className="text-sm text-gray-500">Followers</p>
           </div>
-          <div className="text-center cursor-pointer" onClick={() => {
-            setShowFollowing(true); setShowFollowers(false);
-          }}>
+          <div
+            className="text-center cursor-pointer"
+            onClick={() => {
+              setShowFollowing(!showFollowing);
+              setShowFollowers(false);
+              fetchFollowLists();
+            }}
+          >
             <p className="font-bold">{profile.following_count || 0}</p>
             <p className="text-sm text-gray-500">Following</p>
           </div>
@@ -209,20 +251,28 @@ export default function ProfilePage() {
       {showFollowers && (
         <div className="mt-6">
           <h3 className="font-semibold mb-2">Followers</h3>
-          <p>{profile.followers_count} followers (list not implemented)</p>
+          {followersList.length === 0 ? (
+            <p className="text-gray-500">No followers yet.</p>
+          ) : (
+            followersList.map(renderUserCard)
+          )}
         </div>
       )}
+
       {showFollowing && (
         <div className="mt-6">
           <h3 className="font-semibold mb-2">Following</h3>
-          <p>{profile.following_count} following (list not implemented)</p>
+          {followingList.length === 0 ? (
+            <p className="text-gray-500">You're not following anyone.</p>
+          ) : (
+            followingList.map(renderUserCard)
+          )}
         </div>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-8 border-t pt-4">
         {myPosts.map(post => (
           <div key={post.id} className="relative border p-2 rounded shadow">
-            {/* 3 Dots Button */}
             <button
               onClick={() =>
                 setMenuOpenPostId(menuOpenPostId === post.id ? null : post.id)
@@ -231,8 +281,6 @@ export default function ProfilePage() {
             >
               &#x22EE;
             </button>
-
-            {/* Delete Button */}
             {menuOpenPostId === post.id && (
               <button
                 onClick={() => handleDeletePost(post.id)}
@@ -241,7 +289,6 @@ export default function ProfilePage() {
                 Delete
               </button>
             )}
-
             {post.image && (
               <img
                 src={`${baseURL}${post.image}`}
