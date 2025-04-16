@@ -1,3 +1,4 @@
+// src/context/AuthContext.js
 import { createContext, useContext, useState, useEffect } from 'react';
 
 export const AuthContext = createContext();
@@ -9,17 +10,14 @@ export default function AuthProvider({ children }) {
   const [access, setAccess] = useState(localStorage.getItem('access') || null);
   const [refresh, setRefresh] = useState(localStorage.getItem('refresh') || null);
 
-  // ✅ Safely restore user on page refresh
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
       try {
-        const parsedUser = JSON.parse(savedUser);
-        setUser(parsedUser);
+        setUser(JSON.parse(savedUser));
       } catch (err) {
-        console.error("Error parsing user from localStorage:", err);
-        // optional: clear corrupted localStorage
-        localStorage.removeItem("user");
+        console.error("Failed to parse saved user:", err);
+        localStorage.removeItem('user');
       }
     }
   }, []);
