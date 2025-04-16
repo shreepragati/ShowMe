@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { sendFollowRequest, cancelFollowRequest, unfollowUser } from '../services/follows';
 import { useFollowContext } from '../context/FollowContext';
 import { Link } from 'react-router-dom';
@@ -10,14 +10,15 @@ const PostCard = ({ post, currentUserId }) => {
   const [buttonState, setButtonState] = useState('Follow'); // 'Follow', 'Pending', 'Following'
   const [loading, setLoading] = useState(false);
 
-  const { following, sentRequests, triggerRefresh } = useFollowContext(); // Follow data from context
+  const { following, sentRequests, triggerRefresh } = useFollowContext();
 
   const postUserId = post.user_id || post.user?.id;
 
   useEffect(() => {
     if (!postUserId || !currentUserId) return;
+
     if (Number(postUserId) === Number(currentUserId)) {
-      setOwnPost(true); // This is the logged-in user's post
+      setOwnPost(true);
       return;
     }
 
@@ -38,9 +39,9 @@ const PostCard = ({ post, currentUserId }) => {
       if (buttonState === 'Follow') {
         await sendFollowRequest(postUserId);
         if (post.privacy === 'public') {
-          setButtonState('Following'); // Direct follow
+          setButtonState('Following');
         } else {
-          setButtonState('Pending'); // Request sent
+          setButtonState('Pending');
         }
       } else if (buttonState === 'Pending') {
         await cancelFollowRequest(postUserId);
@@ -50,7 +51,7 @@ const PostCard = ({ post, currentUserId }) => {
         setButtonState('Follow');
       }
 
-      triggerRefresh(); // Refresh follow context state
+      triggerRefresh();
     } catch (err) {
       console.error('Follow action failed:', err.message || err);
     } finally {
@@ -67,31 +68,32 @@ const PostCard = ({ post, currentUserId }) => {
             alt="Profile"
             className="w-8 h-8 rounded-full object-cover"
           />
-          <Link to={`/profile/${typeof post.user === 'object' ? post.user.username : post.user}`} 
-           className="font-semibold hover:underline">
-           {post.user?.username || post.user}
+          <Link
+            to={`/profile/${typeof post.user === 'object' ? post.user.username : post.user}`}
+            className="font-semibold hover:underline"
+          >
+            {post.user?.username || post.user}
           </Link>
         </div>
 
         {!ownPost && (
           <button
             onClick={handleButtonClick}
-            disabled={loading || buttonState === 'Following'}
+            disabled={loading}
             title={
               buttonState === 'Pending'
                 ? 'Click to cancel follow request'
                 : buttonState === 'Following'
-                  ? 'Already following'
-                  : 'Send follow request'
+                ? 'Click to unfollow'
+                : 'Send follow request'
             }
             className={`text-sm px-3 py-1 rounded transition
               ${buttonState === 'Follow'
                 ? 'bg-blue-500 text-white hover:bg-blue-600'
                 : buttonState === 'Pending'
-                  ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                  : 'bg-green-100 text-green-700'
-              }
-              ${loading || buttonState === 'Following' ? 'opacity-50 cursor-not-allowed' : ''}
+                ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                : 'bg-green-100 text-green-700 hover:bg-green-200'}
+              ${loading ? 'opacity-50 cursor-not-allowed' : ''}
             `}
           >
             {loading ? 'Loading...' : buttonState}
