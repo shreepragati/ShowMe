@@ -16,7 +16,6 @@ const PostCard = ({ post, currentUserId }) => {
 
   useEffect(() => {
     if (!postUserId || !currentUserId) return;
-
     if (Number(postUserId) === Number(currentUserId)) {
       setOwnPost(true); // This is the logged-in user's post
       return;
@@ -68,11 +67,9 @@ const PostCard = ({ post, currentUserId }) => {
             alt="Profile"
             className="w-8 h-8 rounded-full object-cover"
           />
-          <Link
-            to={`/profile/${postUserId}`}
-            className="font-semibold hover:underline"
-          >
-            {post.user?.username || post.user}
+          <Link to={`/profile/${typeof post.user === 'object' ? post.user.username : post.user}`} 
+           className="font-semibold hover:underline">
+           {post.user?.username || post.user}
           </Link>
         </div>
 
