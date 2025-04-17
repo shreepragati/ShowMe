@@ -1,9 +1,11 @@
-import React, { useEffect, useState, useRef } from 'react';
+// Chat.jsx
+import React, { useEffect, useState, useRef, useContext } from 'react';
 import { fetchMessages } from '../services/chatService';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
+import { AuthContext } from '../context/AuthContext';
 
-const Chat = ({ username, otherUsername }) => {
+const Chat = ({ otherUsername }) => {
     const [messages, setMessages] = useState([]);
     const [message, setMessage] = useState('');
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -11,6 +13,8 @@ const Chat = ({ username, otherUsername }) => {
     const sentMessageIds = useRef([]);
     const messagesEndRef = useRef(null);
     const token = localStorage.getItem('access');
+    const { user } = useContext(AuthContext);
+    const username = user?.username;
 
     const getRoomName = (user1, user2) => [user1, user2].sort().join('_');
     const roomName = getRoomName(username, otherUsername);
@@ -110,7 +114,7 @@ const Chat = ({ username, otherUsername }) => {
 
                     return (
                         <div
-                            key={index}
+                            key={msg.id || msg.temp_id || index}
                             className={`flex w-full ${isSentByCurrentUser ? 'justify-end' : 'justify-start'}`}
                         >
                             <div

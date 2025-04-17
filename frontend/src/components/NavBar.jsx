@@ -27,6 +27,7 @@ export default function NavBar() {
         {user ? (
           <>
             <Link to="/home" className="text-gray-700 hover:text-orange-500">Home</Link>
+            <Link to="/search" className="text-gray-700 hover:text-orange-500">Search</Link>
             <Link to="/follows" className="text-gray-700 hover:text-orange-500">Follows</Link>
             <Link to="/create" className="text-gray-700 hover:text-orange-500">Post</Link>
             <ProfileIcon /> {/* ✅ Profile image with link */}
