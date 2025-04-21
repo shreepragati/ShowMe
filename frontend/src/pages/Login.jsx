@@ -6,9 +6,11 @@ import toast from 'react-hot-toast';
 import { FcGoogle } from 'react-icons/fc';
 import { GoogleLogin } from '@react-oauth/google';
 import axios from 'axios';
+import { FiEye, FiEyeOff } from 'react-icons/fi'; // 👈 For eye toggle
 
 export default function Login() {
   const [formData, setFormData] = useState({ username: '', password: '' });
+  const [showPassword, setShowPassword] = useState(false); // 👈 Password visibility state
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -35,7 +37,7 @@ export default function Login() {
         token: credential,
       });
 
-      login(res.data); // your JWT login context
+      login(res.data);
       toast.success('Google login successful!');
       navigate('/home');
     } catch (err) {
@@ -47,7 +49,6 @@ export default function Login() {
   const handleGoogleLoginError = () => {
     toast.error('Google login error');
   };
-
 
   return (
     <div className="flex justify-center items-center min-h-[80vh]">
@@ -61,14 +62,22 @@ export default function Login() {
             onChange={handleChange}
             required
           />
-          <input
-            name="password"
-            type="password"
-            placeholder="Password"
-            className="w-full p-2 border rounded"
-            onChange={handleChange}
-            required
-          />
+          <div className="relative">
+            <input
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Password"
+              className="w-full p-2 pr-10 border rounded"
+              onChange={handleChange}
+              required
+            />
+            <span
+              className="absolute right-3 top-2.5 cursor-pointer text-gray-500"
+              onClick={() => setShowPassword(prev => !prev)}
+            >
+              {showPassword ? <FiEyeOff /> : <FiEye />}
+            </span>
+          </div>
           <button className="w-full bg-blue-600 text-white py-2 px-4 rounded">
             Login
           </button>
@@ -82,7 +91,6 @@ export default function Login() {
               onError={handleGoogleLoginError}
             />
           </div>
-
         </div>
       </div>
     </div>
