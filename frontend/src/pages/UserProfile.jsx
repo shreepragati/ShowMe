@@ -1,104 +1,124 @@
 import { useParams, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useEffect, useState, useCallback } from 'react';
-import axios from 'axios';
-import {
-  sendFollowRequest,
-  cancelFollowRequest,
-  unfollowUser
-} from '../services/follows';
+import { useEffect, useState, useContext } from 'react';
+import { fetchProfileWithPosts } from '../services/profile';
+import { fetchFollows } from '../services/follows';
+import { sendFollowRequest, cancelFollowRequest, unfollowUser } from '../services/follows';
+import { AuthContext } from '../context/AuthContext';
+import { useFollowContext } from '../context/FollowContext';
 
 const baseURL = 'http://127.0.0.1:8000';
 
 export default function UserProfile() {
-  const { username: viewedUsername } = useParams();
-  const { user, access } = useAuth();
+  const { username } = useParams();
+  const { user } = useContext(AuthContext); // logged-in user
+  const { triggerRefresh } = useFollowContext();
 
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
+  const [followersList, setFollowersList] = useState([]);
+  const [followingList, setFollowingList] = useState([]);
+  const [showFollowers, setShowFollowers] = useState(false);
+  const [showFollowing, setShowFollowing] = useState(false);
+  const [followStatus, setFollowStatus] = useState(''); // Track the follow button state
   const [loading, setLoading] = useState(false);
-  const [localFollowStatus, setLocalFollowStatus] = useState('');
-  const [loggedInFollowingUsernames, setLoggedInFollowingUsernames] = useState([]);
 
-  const fetchProfileData = useCallback(async () => {
-    if (!viewedUsername) return;
+  const isMe = user?.username === username;
+  const isFollowing = user && followingList.some(u => u.username === username);
+  const hasRequested = user && followingList.some(u => u.username === username && u.followStatus === 'Requested');
+
+  useEffect(() => {
+    if (!username) return;
+
+    // Fetch profile with posts
+    fetchProfileWithPosts(username)
+      .then(res => {
+        const data = res.data;
+        setProfile({
+          ...data.profile,
+          followers_count: data.followers_count,
+          following_count: data.following_count,
+          mutual_follow_count: data.mutual_follow_count,
+        });
+        setPosts(data.posts || []);
+      })
+      .catch(console.error);
+  }, [username]);
+
+  const fetchFollowLists = async () => {
     try {
-      const response = await axios.get(`${baseURL}/profileview/user/${viewedUsername}/`, {
-        headers: { Authorization: `Bearer ${access}` },
-      });
-      const profileData = response.data.profile;
-      setProfile(profileData);
-      setPosts(Array.isArray(response.data.posts) ? response.data.posts : []);
+      // Fetch followers and following lists for the current user profile
+      const res = await fetchFollows(username);
+      setFollowersList(res.data.followers || []);
+      setFollowingList(res.data.following || []);
     } catch (err) {
-      console.error('Error fetching profile or posts:', err);
-      setProfile(null);
-      setPosts([]);
+      console.error('Failed to fetch user follow lists', err);
     }
-  }, [viewedUsername, access]);
-
-  const fetchLoggedInFollowing = useCallback(async () => {
-    if (!access) return;
-    try {
-      const response = await axios.get(`${baseURL}/follows/my-follows/`, {
-        headers: { Authorization: `Bearer ${access}` },
-      });
-      const followingUsernames = response.data.following.map(user => user.username);
-      setLoggedInFollowingUsernames(followingUsernames);
-    } catch (error) {
-      console.error('Error fetching logged-in user\'s following:', error);
-      setLoggedInFollowingUsernames([]);
-    }
-  }, [access]);
+  };
 
   useEffect(() => {
-    fetchProfileData();
-    fetchLoggedInFollowing();
-  }, [fetchProfileData, fetchLoggedInFollowing]);
+    if (isMe) return; // Skip for logged-in user's profile
+    fetchFollowLists();
+  }, [username, isMe]);
 
   useEffect(() => {
-    if (profile && user && profile.username !== user.username) {
-      if (loggedInFollowingUsernames.includes(profile.username)) {
-        setLocalFollowStatus('Following');
-      } else {
-        setLocalFollowStatus('Follow');
-      }
+    if (isFollowing) {
+      setFollowStatus('Following');
+    } else if (hasRequested) {
+      setFollowStatus('Requested');
     } else {
-      setLocalFollowStatus('');
+      setFollowStatus('Follow');
     }
-  }, [profile, loggedInFollowingUsernames, user, viewedUsername]);
+  }, [isFollowing, hasRequested]);
 
   const handleFollow = async () => {
-    if (!profile || loading || !user) return;
+    if (loading || !username) return;
+
     setLoading(true);
-    const viewedUserProfileUsername = profile.username; // Using username here
-    const currentFollowStatus = localFollowStatus;
-    let newFollowStatus = '';
-
     try {
-      if (currentFollowStatus === 'Following') {
-        await unfollowUser(viewedUserProfileUsername); // Using username here
-        newFollowStatus = 'Follow';
-      } else if (currentFollowStatus === 'Follow') {
-        await sendFollowRequest(viewedUserProfileUsername); // Using username here
-        newFollowStatus = profile.privacy === 'public' ? 'Following' : 'Pending';
+      if (followStatus === 'Follow') {
+        await sendFollowRequest(username);
+        setFollowStatus('Requested');
+      } else if (followStatus === 'Requested') {
+        await cancelFollowRequest(username);
+        setFollowStatus('Follow');
       }
-
-      setLocalFollowStatus(newFollowStatus);
-      fetchLoggedInFollowing();
+      triggerRefresh();
     } catch (err) {
-      console.error('Follow action failed:', err);
-      setLocalFollowStatus(currentFollowStatus);
+      console.error('Follow error:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  if (!profile) return <div className="text-center py-10">Loading profile...</div>;
+  const handleUnfollow = async () => {
+    if (loading || !username) return;
 
-  const isOwnProfile = user && profile.id === user.id;
-  const showFollowButton = !isOwnProfile;
-  const buttonText = localFollowStatus;
-  const buttonTitle = localFollowStatus === 'Pending' ? 'Click to cancel follow request' : localFollowStatus === 'Following' ? 'Click to unfollow' : 'Send follow request';
+    setLoading(true);
+    try {
+      await unfollowUser(username);
+      setFollowStatus('Follow');
+      triggerRefresh();
+    } catch (err) {
+      console.error('Unfollow error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderUserCard = (u) => (
+    <div key={u.id} className="flex items-center space-x-3 bg-white shadow p-3 rounded mb-2">
+      <img
+        src={u.profile_pic ? `${baseURL}${u.profile_pic}` : '/default-avatar.png'}
+        alt="Profile"
+        className="w-10 h-10 rounded-full object-cover"
+      />
+      <Link to={`/profile/${u.username}`} className="font-medium text-blue-600 hover:underline">
+        {u.username}
+      </Link>
+    </div>
+  );
+
+  if (!profile) return <div className="text-center py-10">Loading profile...</div>;
 
   return (
     <div className="max-w-3xl mx-auto p-4">
@@ -108,45 +128,68 @@ export default function UserProfile() {
           alt="Profile"
           className="w-28 h-28 rounded-full object-cover border mb-2"
         />
-        <h2 className="text-2xl font-semibold">@{profile.username}</h2>
-
+        <h2 className="text-2xl font-semibold">{profile.username}</h2>
         <div className="flex gap-8 mt-4">
           <div className="text-center">
             <p className="font-bold">{posts.length}</p>
             <p className="text-sm text-gray-500">Posts</p>
           </div>
-          <div className="text-center">
+          <div
+            className="text-center cursor-pointer"
+            onClick={() => {
+              setShowFollowers(!showFollowers);
+              setShowFollowing(false);
+              fetchFollowLists();
+            }}
+          >
             <p className="font-bold">{profile.followers_count || 0}</p>
             <p className="text-sm text-gray-500">Followers</p>
           </div>
-          <div className="text-center">
+          <div
+            className="text-center cursor-pointer"
+            onClick={() => {
+              setShowFollowing(!showFollowing);
+              setShowFollowers(false);
+              fetchFollowLists();
+            }}
+          >
             <p className="font-bold">{profile.following_count || 0}</p>
             <p className="text-sm text-gray-500">Following</p>
           </div>
         </div>
 
-        {showFollowButton && (
-          <button
-            onClick={handleFollow}
-            title={buttonTitle}
-            className={`px-4 py-1 mt-4 rounded text-sm transition
-              ${buttonText === 'Follow'
-                ? 'bg-blue-500 text-white hover:bg-blue-600'
-                : buttonText === 'Pending'
-                  ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                  : buttonText === 'Following'
-                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                    : ''
-              }
-              ${loading || !profile?.id ? 'opacity-50 cursor-not-allowed' : ''}
-            `}
-          >
-            {loading ? 'Loading...' : buttonText}
-          </button>
+        {/* Follow Button */}
+        {!isMe && (
+          <div className="mt-2">
+            {followStatus === 'Following' ? (
+              <button
+                onClick={handleUnfollow}
+                className="bg-gray-200 text-black px-4 py-1 rounded hover:bg-gray-300"
+                disabled={loading}
+              >
+                Following
+              </button>
+            ) : followStatus === 'Requested' ? (
+              <button
+                onClick={handleCancelRequest}
+                className="bg-yellow-300 text-black px-4 py-1 rounded hover:bg-yellow-400"
+                disabled={loading}
+              >
+                Requested
+              </button>
+            ) : (
+              <button
+                onClick={handleFollow}
+                className="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600"
+                disabled={loading}
+              >
+                {loading ? 'Loading...' : 'Follow'}
+              </button>
+            )}
+          </div>
         )}
       </div>
 
-      {/* Profile details */}
       <div className="mt-6 text-sm space-y-1">
         <p><strong>Name:</strong> {profile.first_name || ''} {profile.last_name || ''}</p>
         <p><strong>Email:</strong> {profile.email || 'Not provided'}</p>
@@ -155,10 +198,31 @@ export default function UserProfile() {
         <p><strong>Privacy:</strong> {profile.privacy || 'Not specified'}</p>
       </div>
 
-      {/* Posts */}
+      {showFollowers && (
+        <div className="mt-6">
+          <h3 className="font-semibold mb-2">Followers</h3>
+          {followersList.length === 0 ? (
+            <p className="text-gray-500">No followers yet.</p>
+          ) : (
+            followersList.map(renderUserCard)
+          )}
+        </div>
+      )}
+
+      {showFollowing && (
+        <div className="mt-6">
+          <h3 className="font-semibold mb-2">Following</h3>
+          {followingList.length === 0 ? (
+            <p className="text-gray-500">Not following anyone.</p>
+          ) : (
+            followingList.map(renderUserCard)
+          )}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-8 border-t pt-4">
         {posts.map(post => (
-          <div key={post.id} className="border p-2 rounded shadow">
+          <div key={post.id} className="relative border p-2 rounded shadow">
             {post.image && (
               <img
                 src={`${baseURL}${post.image}`}
