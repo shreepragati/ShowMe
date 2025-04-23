@@ -10,7 +10,15 @@ class UserSearchView(APIView):
 
     def get(self, request):
         query = request.GET.get('q', '')
-        results = ProfileDocument.search().query("match", username=query)
+        if not query:
+            return Response([])  # Return empty list if no query
+
+        s = ProfileDocument.search().query(
+            "multi_match",
+            query=query,
+            fields=['username', 'bio']  # Add other fields you want to search
+        )
+        results = s.execute()
         data = [
             {
                 "username": hit.username,

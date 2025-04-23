@@ -13,6 +13,7 @@ profile_index.settings(
 @registry.register_document
 class ProfileDocument(Document):
     username = fields.TextField(attr='user.username')  # Search by username
+    bio = fields.TextField()  # Make 'bio' searchable as full text
 
     class Index:
         name = 'profiles'
@@ -20,7 +21,6 @@ class ProfileDocument(Document):
     class Django:
         model = Profile
         fields = [
-            'bio',
             'privacy',
             'profile_pic',
         ]
