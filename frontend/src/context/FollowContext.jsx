@@ -3,10 +3,6 @@ import axios from 'axios';
 
 const FollowContext = createContext();
 
-const token = localStorage.getItem('access');
-
-
-
 export const FollowContextProvider = ({ children }) => {
   const [refreshFollows, setRefreshFollows] = useState(0);
   const [following, setFollowing] = useState([]);
@@ -17,6 +13,14 @@ export const FollowContextProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    const token = localStorage.getItem('access');
+
+    // Only fetch if token exists
+    if (!token) {
+      console.warn('No access token found. Skipping follow data fetch.');
+      return;
+    }
+
     const fetchFollowData = async () => {
       try {
         const res = await axios.get('http://127.0.0.1:8000/follows/my-follows/', {

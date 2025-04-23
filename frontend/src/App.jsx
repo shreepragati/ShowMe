@@ -13,6 +13,7 @@ import UserProfile from './pages/UserProfile';
 import Follows from './pages/Follows';
 import ChatPage from './pages/ChatPage';
 import SearchPage from './pages/SearchPage';
+import NotificationsPage from './pages/NotificationsPage';
 
 function ProtectedRoute({ children }) {
   const isAuthenticated = !!localStorage.getItem('access');
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="/follows" element={<ProtectedRoute><Follows /></ProtectedRoute>} />
           <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
           <Route path="/chat/:username" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+          <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="*" element={<Navigate to="/home" replace />} />
         </Routes>
       </FollowContextProvider>

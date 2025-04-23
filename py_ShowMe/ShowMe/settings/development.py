@@ -50,7 +50,8 @@ INSTALLED_APPS = [
 
     #Messaging
     "channels",
-    "chat"
+    "chat",
+    "notifications",
 ]
 
 MIDDLEWARE = [

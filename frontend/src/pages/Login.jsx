@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login as loginAPI } from '../services/auth';
 import { useAuth } from '../context/AuthContext';
+import { useFollowContext } from '../context/FollowContext'; // Import FollowContext
 import toast from 'react-hot-toast';
 import { FcGoogle } from 'react-icons/fc';
 import { GoogleLogin } from '@react-oauth/google';
@@ -11,6 +12,7 @@ export default function Login() {
   const [formData, setFormData] = useState({ username: '', password: '' });
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { triggerRefresh } = useFollowContext(); // Access triggerRefresh
 
   const handleChange = e =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -20,6 +22,7 @@ export default function Login() {
     try {
       const data = await loginAPI(formData);
       login(data);
+      triggerRefresh(); // Immediately trigger refresh after login
       toast.success('Login successful!');
       navigate('/home');
     } catch {
@@ -36,6 +39,7 @@ export default function Login() {
       });
 
       login(res.data); // your JWT login context
+      triggerRefresh(); // Immediately trigger refresh after Google login
       toast.success('Google login successful!');
       navigate('/home');
     } catch (err) {
@@ -47,7 +51,6 @@ export default function Login() {
   const handleGoogleLoginError = () => {
     toast.error('Google login error');
   };
-
 
   return (
     <div className="flex justify-center items-center min-h-[80vh]">
@@ -82,7 +85,6 @@ export default function Login() {
               onError={handleGoogleLoginError}
             />
           </div>
-
         </div>
       </div>
     </div>

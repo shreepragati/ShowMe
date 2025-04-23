@@ -5,9 +5,10 @@ import App from './App';
 import './index.css';
 import AuthProvider from './context/AuthContext';
 import { Toaster } from 'react-hot-toast';
-
-// ✅ Add this import
 import { GoogleOAuthProvider } from '@react-oauth/google';
+
+// Import your NotificationProvider
+import { NotificationProvider } from './context/NotificationContext';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
@@ -15,7 +16,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <BrowserRouter>
         <Toaster position="top-right" />
         <AuthProvider>
-          <App />
+          {/* Wrap your App with NotificationProvider */}
+          <NotificationProvider>
+            <App />
+          </NotificationProvider>
         </AuthProvider>
       </BrowserRouter>
     </GoogleOAuthProvider>

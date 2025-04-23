@@ -7,6 +7,7 @@ from userProfile.models import Profile
 from .models import Follow
 from django.contrib.auth import get_user_model
 from .serializers import FollowSerializer, SimpleUserSerializer
+from notifications.models import Notification,NotificationType
 
 
 User = get_user_model()
@@ -31,9 +32,21 @@ class FollowUser(APIView):
         profile = following.profile
         if profile.privacy == 'public':
             Follow.objects.create(follower=follower, following=following, accepted=True)
+            Notification.objects.create(
+                user=following,
+                sender=follower,  # The user performing the action (follower)
+                type=NotificationType.FOLLOW,
+                content=f"{follower.username} started following you."
+            )
             return Response({"message": f"Followed {following.username} successfully!"})
         else:
             Follow.objects.create(follower=follower, following=following, accepted=False)
+            Notification.objects.create(
+                user=following,
+                sender=follower,  # The user performing the action (follower)
+                type=NotificationType.FOLLOW_REQUEST,
+                content=f"{follower.username} sent you a follow request."
+            )
             return Response({"message": f"Follow request sent to {following.username}."})
 
 
@@ -44,6 +57,10 @@ class AcceptFollowRequest(APIView):
         follow = get_object_or_404(Follow, id=follow_id, following=request.user, accepted=False)
         follow.accepted = True
         follow.save()
+        Notification.objects.create(
+            user=follow.follower,
+            content=f"{request.user.username} accepted your follow request."
+        )
         return Response({"message": "Follow request accepted."})
 
 class CancelFollowRequest(APIView):
@@ -63,6 +80,10 @@ class UnfollowUser(APIView):
         follow = Follow.objects.filter(follower=request.user, following__id=user_id, accepted=True).first()
         if follow:
             follow.delete()
+            Notification.objects.create(
+                user=follow.following,
+                content=f"{request.user.username} unfollowed you."
+            )
             return Response({"message": "Unfollowed successfully."})
         return Response({"message": "Follow relationship not found."}, status=status.HTTP_404_NOT_FOUND)
 

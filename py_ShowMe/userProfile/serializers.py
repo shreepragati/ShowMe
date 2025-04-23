@@ -37,13 +37,14 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
         instance.user.save()
 
         # 2. Handle profile_pic update
-        if 'profile_pic' in validated_data:
-            new_picture = validated_data.get("profile_pic")
-            if new_picture and instance.profile_pic:
+        new_picture = validated_data.get("profile_pic", None)
+        if new_picture not in [None, '', 'null']:
+            if instance.profile_pic:
                 old_path = instance.profile_pic.path
                 if os.path.exists(old_path):
                     os.remove(old_path)
-            instance.profile_pic = new_picture  # set new pic (can be None)
+            instance.profile_pic = new_picture
+
 
         # 3. Update other Profile fields
         for attr, value in validated_data.items():

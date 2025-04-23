@@ -84,15 +84,15 @@ const PostCard = ({ post, currentUserId }) => {
               buttonState === 'Pending'
                 ? 'Click to cancel follow request'
                 : buttonState === 'Following'
-                ? 'Click to unfollow'
-                : 'Send follow request'
+                  ? 'Click to unfollow'
+                  : 'Send follow request'
             }
             className={`text-sm px-3 py-1 rounded transition
               ${buttonState === 'Follow'
                 ? 'bg-blue-500 text-white hover:bg-blue-600'
                 : buttonState === 'Pending'
-                ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                : 'bg-green-100 text-green-700 hover:bg-green-200'}
+                  ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                  : 'bg-green-100 text-green-700 hover:bg-green-200'}
               ${loading ? 'opacity-50 cursor-not-allowed' : ''}
             `}
           >

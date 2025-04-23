@@ -1,4 +1,3 @@
-# consumers.py
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
@@ -105,7 +104,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def save_message(self, sender, receiver, message):
+        print("➡️ save_message method in ChatConsumer called!")  # Add this
+
         from .models import Message, ChatRoom
+        from notifications.models import Notification, NotificationType  # Import here
+
         room_name = self.get_room_name(sender.username, receiver.username)
 
         # Get or create the ChatRoom
@@ -122,4 +125,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # Save the message to the database with the room
         message_obj = Message.objects.create(room=room, sender=sender, receiver=receiver, content=message)
         print("Message object created:", message_obj)
+
+        # 🔔 Create notification for the receiver
+        print("Attempting to create notification...")  # Add this
+
+        Notification.objects.create(
+            user=receiver,
+            content=f"You have a new message from {sender.username}",
+            sender=sender,
+            type=NotificationType.MESSAGE,
+        )
+        print(f"📨 Notification created for message from {sender.username} to {receiver.username}")
+
         return message_obj
