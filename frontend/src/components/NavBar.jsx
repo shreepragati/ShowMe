@@ -6,6 +6,7 @@ import ProfileIcon from './ProfileIcon';
 import { MdHome, MdSearch, MdGroup, MdAddBox } from 'react-icons/md';
 import NotificationBell from './NotificationBell'; // ✅ Add NotificationBell component
 
+
 export default function NavBar() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();

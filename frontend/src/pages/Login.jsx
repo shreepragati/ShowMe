@@ -11,7 +11,6 @@ import { FiEye, FiEyeOff } from 'react-icons/fi'; // 👈 For eye toggle
 
 export default function Login() {
   const [formData, setFormData] = useState({ username: '', password: '' });
-  const [showPassword, setShowPassword] = useState(false); // Password visibility state
   const navigate = useNavigate();
   const { login } = useAuth();
   const { triggerRefresh } = useFollowContext(); // Access triggerRefresh

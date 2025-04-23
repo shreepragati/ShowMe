@@ -24,7 +24,7 @@ export default function Register() {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    setErrorMessages([]); // Reset errors
+    setErrorMessages([]);
 
     const errors = validateForm();
     if (errors.length > 0) {
@@ -75,22 +75,14 @@ export default function Register() {
             onChange={handleChange}
             value={formData.email}
           />
-          <div className="relative">
-            <input
-              name="password"
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Password"
-              className="w-full p-2 pr-10 border rounded"
-              onChange={handleChange}
-              value={formData.password}
-            />
-            <span
-              className="absolute right-3 top-2.5 cursor-pointer text-gray-500"
-              onClick={() => setShowPassword(prev => !prev)}
-            >
-              {showPassword ? <FiEyeOff /> : <FiEye />}
-            </span>
-          </div>
+          <input
+            name="password"
+            type="password"
+            placeholder="Password"
+            className="w-full p-2 border rounded"
+            onChange={handleChange}
+            value={formData.password}
+          />
           <select
             name="privacy"
             className="w-full p-2 border rounded"
