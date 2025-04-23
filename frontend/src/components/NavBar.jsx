@@ -1,11 +1,14 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import ProfileIcon from './ProfileIcon'; // ✅ Component to display circular profile image
+import ProfileIcon from './ProfileIcon';
+
+// ✅ Google Material Icons
+import { MdHome, MdSearch, MdGroup, MdAddBox } from 'react-icons/md';
 import NotificationBell from './NotificationBell'; // ✅ Add NotificationBell component
 
 export default function NavBar() {
   const navigate = useNavigate();
-  const { user, logout } = useAuth(); // ✅ Get logout and user from context
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
     logout();
@@ -23,21 +26,33 @@ export default function NavBar() {
       </div>
 
       {/* Right Navigation */}
-      <div className="flex items-center space-x-4 text-sm font-medium">
+      <div className="flex items-center space-x-6 text-xl text-gray-700">
         {user ? (
           <>
-            <Link to="/home" className="text-gray-700 hover:text-orange-500">Home</Link>
-            <Link to="/search" className="text-gray-700 hover:text-orange-500">Search</Link>
-            <Link to="/follows" className="text-gray-700 hover:text-orange-500">Follows</Link>
-            <Link to="/create" className="text-gray-700 hover:text-orange-500">Post</Link>
+            {/* Navigation Links with Icons */}
+            <Link to="/home" className="hover:text-orange-500" title="Home">
+              <MdHome />
+            </Link>
+            <Link to="/search" className="hover:text-orange-500" title="Search">
+              <MdSearch />
+            </Link>
+            <Link to="/follows" className="hover:text-orange-500" title="Follows">
+              <MdGroup />
+            </Link>
+            <Link to="/create" className="hover:text-orange-500" title="Post">
+              <MdAddBox />
+            </Link>
 
             {/* Notification Bell */}
             <NotificationBell /> {/* ✅ Notification bell component */}
 
-            <ProfileIcon /> {/* ✅ Profile image with link */}
+            {/* Profile Icon */}
+            <ProfileIcon />
+
+            {/* Logout Button */}
             <button
               onClick={handleLogout}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1 rounded"
+              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1 rounded text-sm"
             >
               Logout
             </button>
