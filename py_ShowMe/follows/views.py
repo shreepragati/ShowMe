@@ -135,3 +135,20 @@ class MyFollows(APIView):
         })
 
 
+
+class FollowUserByUsername(FollowUser):
+    def post(self, request, username):
+        user = get_object_or_404(User, username=username)
+        return super().post(request, user_id=user.id)
+
+
+class CancelFollowRequestByUsername(CancelFollowRequest):
+    def delete(self, request, username):
+        user = get_object_or_404(User, username=username)
+        return super().delete(request, user_id=user.id)
+
+
+class UnfollowUserByUsername(UnfollowUser):
+    def delete(self, request, username):
+        user = get_object_or_404(User, username=username)
+        return super().delete(request, user_id=user.id)
