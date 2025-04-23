@@ -75,14 +75,22 @@ export default function Register() {
             onChange={handleChange}
             value={formData.email}
           />
-          <input
-            name="password"
-            type="password"
-            placeholder="Password"
-            className="w-full p-2 border rounded"
-            onChange={handleChange}
-            value={formData.password}
-          />
+          <div className="relative">
+            <input
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Password should be at least 6 characters and digits"
+              className="w-full p-2 pr-10 border rounded"
+              onChange={handleChange}
+              value={formData.password}
+            />
+            <span
+              className="absolute right-3 top-2.5 cursor-pointer text-gray-500"
+              onClick={() => setShowPassword(prev => !prev)}
+            >
+              {showPassword ? <FiEyeOff /> : <FiEye />}
+            </span>
+          </div>
           <select
             name="privacy"
             className="w-full p-2 border rounded"
