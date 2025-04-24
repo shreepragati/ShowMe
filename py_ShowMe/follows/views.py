@@ -134,6 +134,30 @@ class MyFollows(APIView):
             ]
         })
 
+class UserFollows(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, username):
+        user = get_object_or_404(User, username=username)
+
+        followers_qs = Follow.objects.filter(following=user, accepted=True)
+        following_qs = Follow.objects.filter(follower=user, accepted=True)
+
+        followers_set = set(f.follower.id for f in followers_qs)
+        following_set = set(f.following.id for f in following_qs)
+        mutual_ids = followers_set & following_set
+
+        return Response({
+            "user": SimpleUserSerializer(user).data,
+            "followers": [SimpleUserSerializer(f.follower).data for f in followers_qs],
+            "following": [SimpleUserSerializer(f.following).data for f in following_qs],
+            "mutual_follows": (
+    SimpleUserSerializer(User.objects.filter(id__in=mutual_ids), many=True).data
+    if user == request.user else []
+),
+
+        })
+
 
 
 class FollowUserByUsername(FollowUser):

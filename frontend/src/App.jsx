@@ -1,7 +1,8 @@
 // src/App.js
 import { Routes, Route, Navigate } from 'react-router-dom';
-import AuthProvider from './context/AuthContext';
+import AuthProvider, { useAuth } from './context/AuthContext';
 import { FollowContextProvider } from './context/FollowContext';
+import { NotificationProvider } from './context/NotificationContext';
 
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -20,24 +21,35 @@ function ProtectedRoute({ children }) {
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 }
 
+// Separate wrapper to access `user` inside `NotificationProvider`
+function AppRoutesWrapper() {
+  const { user } = useAuth();
+
+  return (
+    <NotificationProvider userId={user?.id}>
+      <NavBar />
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+        <Route path="/create" element={<ProtectedRoute><CreatePost /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        <Route path="/profile/:username" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+        <Route path="/follows" element={<ProtectedRoute><Follows /></ProtectedRoute>} />
+        <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
+        <Route path="/chat/:username" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+        <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
+        <Route path="*" element={<Navigate to="/home" replace />} />
+      </Routes>
+    </NotificationProvider>
+  );
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <FollowContextProvider>
-        <NavBar />
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-          <Route path="/create" element={<ProtectedRoute><CreatePost /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-          <Route path="/profile/:username" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-          <Route path="/follows" element={<ProtectedRoute><Follows /></ProtectedRoute>} />
-          <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
-          <Route path="/chat/:username" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
-          <Route path="/notifications" element={<NotificationsPage />} />
-          <Route path="*" element={<Navigate to="/home" replace />} />
-        </Routes>
+        <AppRoutesWrapper />
       </FollowContextProvider>
     </AuthProvider>
   );

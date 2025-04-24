@@ -16,8 +16,6 @@ export default function NotificationsPage() {
                     },
                 });
 
-                console.log("Fetched notifications:", response.data); // Log the direct array
-
                 if (response.data && Array.isArray(response.data)) {
                     if (response.data.length === 0) {
                         setError("No notifications found.");
@@ -38,26 +36,22 @@ export default function NotificationsPage() {
         fetchNotifications();
     }, [token]);
 
-    if (loading) return <p>Loading...</p>;
-    if (error) return <p>{error}</p>;
-
-    console.log("Notifications state:", notifications); // Log notifications state
+    if (loading) return <p className="text-gray-300 text-center mt-4">Loading...</p>;
+    if (error) return <p className="text-red-400 text-center mt-4">{error}</p>;
 
     return (
-        <div className="max-w-xl mx-auto p-4">
-            <h2 className="text-2xl font-bold mb-4">Notifications</h2>
+        <div className="max-w-xl mx-auto p-6 bg-gray-900 min-h-screen text-gray-100">
+            <h2 className="text-3xl font-bold mb-6 border-b border-gray-700 pb-2">Notifications</h2>
+
             {notifications.length === 0 ? (
-                <p className="text-gray-500">No notifications yet.</p>
+                <p className="text-gray-400">No notifications yet.</p>
             ) : (
-                <ul className="space-y-2">
+                <ul className="space-y-4">
                     {notifications.map((notification) => (
-                        <li key={notification.id} className="bg-white shadow p-3 rounded">
-                            <p>{notification.content}</p>
-                            <p className="text-xs text-gray-400">
+                        <li key={notification.id} className="bg-gray-800 border border-gray-700 p-4 rounded-lg shadow">
+                            <p className="text-gray-200">{notification.content}</p>
+                            <p className="text-xs text-gray-500 mt-2">
                                 {new Date(notification.created_at).toLocaleString()}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                                Sent by: {notification.sender ? notification.sender.username : 'Unknown'}
                             </p>
                         </li>
                     ))}

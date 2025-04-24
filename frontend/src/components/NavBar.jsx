@@ -1,11 +1,9 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ProfileIcon from './ProfileIcon';
-
-// ✅ Google Material Icons
+import NotificationBell from './NotificationBell';
 import { MdHome, MdSearch, MdGroup, MdAddBox } from 'react-icons/md';
-import NotificationBell from './NotificationBell'; // ✅ Add NotificationBell component
-
+import { BiLogOut, BiUserPlus } from 'react-icons/bi';
 
 export default function NavBar() {
   const navigate = useNavigate();
@@ -17,57 +15,59 @@ export default function NavBar() {
   };
 
   return (
-    <nav className="bg-white shadow border-b border-gray-200 px-6 py-3 flex justify-between items-center sticky top-0 z-50">
+    <nav className="bg-gradient-to-r from-cyan-700 via-blue-800 to-indigo-900 shadow-md border-b border-indigo-800/50 px-8 py-4 flex justify-between items-center sticky top-0 z-50 backdrop-blur-md bg-opacity-90">
       {/* Logo */}
-      <div className="flex items-center space-x-2 text-xl font-bold text-gray-800">
-        <div className="w-8 h-8 bg-orange-500 rounded flex items-center justify-center text-white font-mono">
-          B
+      <Link to={user ? "/home" : "/"} className="flex items-center space-x-3 text-2xl font-extrabold text-white tracking-tight">
+        <div className="w-10 h-10 bg-teal-400 rounded-lg flex items-center justify-center text-white font-mono shadow-md">
+          <span>SM</span>
         </div>
-        <span>ShowMe</span>
-      </div>
+        <span className="hidden sm:inline">ShowMe</span>
+      </Link>
 
       {/* Right Navigation */}
-      <div className="flex items-center space-x-6 text-xl text-gray-700">
+      <div className="flex items-center space-x-6 text-white text-xl">
         {user ? (
-          <>
-            {/* Navigation Links with Icons */}
-            <Link to="/home" className="hover:text-orange-500" title="Home">
-              <MdHome />
+          <div className="flex items-center space-x-6">
+            {/* Navigation Icons */}
+            <Link to="/home" className="hover:text-teal-300 transition-colors duration-200" title="Home">
+              <MdHome size={24} />
             </Link>
-            <Link to="/search" className="hover:text-orange-500" title="Search">
-              <MdSearch />
+            <Link to="/search" className="hover:text-teal-300 transition-colors duration-200" title="Search">
+              <MdSearch size={24} />
             </Link>
-            <Link to="/follows" className="hover:text-orange-500" title="Follows">
-              <MdGroup />
+            <Link to="/follows" className="hover:text-teal-300 transition-colors duration-200" title="Follows">
+              <MdGroup size={24} />
             </Link>
-            <Link to="/create" className="hover:text-orange-500" title="Post">
-              <MdAddBox />
+            <Link to="/create" className="hover:text-teal-300 transition-colors duration-200" title="Post">
+              <MdAddBox size={24} />
             </Link>
 
-            {/* Notification Bell */}
-            <NotificationBell /> {/* ✅ Notification bell component */}
-
-            {/* Profile Icon */}
+            {/* Notifications & Profile */}
+            <NotificationBell className="hover:text-teal-300" />
             <ProfileIcon />
 
-            {/* Logout Button */}
+            {/* Logout */}
             <button
               onClick={handleLogout}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1 rounded text-sm"
+              className="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded-lg text-sm flex items-center space-x-2 shadow-md transition duration-200"
             >
-              Logout
+              <BiLogOut size={18} />
+              <span>Logout</span>
             </button>
-          </>
+          </div>
         ) : (
-          <>
-            <Link to="/login" className="text-gray-700 hover:underline">Sign In</Link>
+          <div className="flex items-center space-x-4 text-base">
+            <Link to="/login" className="hover:text-teal-300 transition-colors duration-200">
+              Sign In
+            </Link>
             <Link
               to="/register"
-              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1 rounded"
+              className="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 shadow-md transition duration-200"
             >
-              Create Your Account
+              <BiUserPlus size={18} />
+              <span>Join Us</span>
             </Link>
-          </>
+          </div>
         )}
       </div>
     </nav>

@@ -1,9 +1,9 @@
-# search/views.py
-
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from elasticsearch_dsl import Q
 from .documents.profile_document import ProfileDocument
+
 
 class UserSearchView(APIView):
     permission_classes = [IsAuthenticated]
@@ -11,14 +11,15 @@ class UserSearchView(APIView):
     def get(self, request):
         query = request.GET.get('q', '')
         if not query:
-            return Response([])  # Return empty list if no query
+            return Response([])
 
-        s = ProfileDocument.search().query(
-            "multi_match",
-            query=query,
-            fields=['username', 'bio']  # Add other fields you want to search
-        )
+        # wildcard query for partial matches
+        q = Q("wildcard", username={"value": f"*{query.lower()}*"}) | \
+            Q("wildcard", bio={"value": f"*{query.lower()}*"})
+
+        s = ProfileDocument.search().query(q)
         results = s.execute()
+
         data = [
             {
                 "username": hit.username,

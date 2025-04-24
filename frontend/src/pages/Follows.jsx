@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchFollows, acceptFollowRequest, sendFollowRequest } from '../services/follows';
 import toast from 'react-hot-toast';
@@ -14,6 +14,7 @@ export default function Follows() {
   const [following, setFollowing] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('mutuals');
 
   const sentRequestIds = requestsSent.map(user => user.id);
 
@@ -41,8 +42,10 @@ export default function Follows() {
     try {
       await acceptFollowRequest(id);
       toast.success("Follow request accepted!");
+      loadFollows();
       triggerRefresh();
-    } catch {
+    } catch (err) {
+      console.error("Accept request error:", err);
       toast.error("Something went wrong while accepting");
     }
   };
@@ -60,17 +63,19 @@ export default function Follows() {
   const renderUserCard = (user) => {
     const alreadySent = sentRequestIds.includes(user.id);
     const alreadyFollowing = following.map(f => f.id).includes(user.id);
-    console.log('Username for chat link:', user.username);
 
     return (
-      <div key={user.id} className="flex items-center justify-between bg-white p-3 shadow rounded mb-3">
-        <div className="flex items-center space-x-3">
+      <div
+        key={user.id}
+        className="flex items-center justify-between bg-white/10 backdrop-blur-md border border-white/10 p-4 rounded-2xl shadow-lg hover:scale-[1.01] transition-transform duration-300"
+      >
+        <div className="flex items-center space-x-4">
           <img
-            src={user.profile_pic ? `${baseURL}${user.profile_pic}` : '/default-avatar.png'}
+            src={user.profile_pic ? `${baseURL}${user.profile_pic}` : `https://ui-avatars.com/api/?name=${user.username}&background=0D8ABC&color=fff&rounded=true&size=128`}
             alt="Profile"
-            className="w-10 h-10 rounded-full object-cover"
+            className="w-12 h-12 rounded-full object-cover ring-2 ring-white"
           />
-          <Link to={`/profile/${user.username}`} className="font-semibold hover:underline">
+          <Link to={`/profile/${user.username}`} className="text-lg font-semibold hover:underline">
             {user.username}
           </Link>
         </div>
@@ -80,15 +85,19 @@ export default function Follows() {
             <button
               onClick={() => followBack(user)}
               disabled={alreadySent}
-              className={`text-sm px-3 py-1 rounded ${alreadySent ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+              className={`text-sm px-4 py-2 rounded-xl font-medium transition duration-300 ${alreadySent
+                ? 'bg-yellow-300/20 text-yellow-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}
             >
               {alreadySent ? 'Pending' : 'Follow Back'}
             </button>
           )}
 
           {mutuals.find(m => m.id === user.id) && (
-            <Link to={`/chat/${user.username}`}
-              className="text-sm px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded"
+            <Link
+              to={`/chat/${user.username}`}
+              className="text-sm px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium transition duration-300"
             >
               Chat
             </Link>
@@ -98,58 +107,104 @@ export default function Follows() {
     );
   };
 
-
-  if (loading) return <p className="p-4">Loading follow data...</p>;
-  if (error) return <p className="p-4 text-red-500">{error}</p>;
+  if (loading) return <p className="p-6 text-white text-center">Loading follow data...</p>;
+  if (error) return <p className="p-6 text-red-500 text-center">{error}</p>;
 
   return (
-    <div className="p-4 max-w-3xl mx-auto">
-      <h2 className="text-xl font-bold mb-3">Mutual Follows</h2>
-      {mutuals.length === 0 ? (
-        <p className="text-gray-600 mb-6">No mutual friends yet.</p>
-      ) : (
-        mutuals.map(user => renderUserCard(user))
-      )}
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-[#0f2027] to-[#203a43] text-white p-6">
+      <div className="max-w-3xl mx-auto space-y-10">
+        <div className="p-6 max-w-4xl mx-auto bg-gray-900 min-h-screen text-white rounded-xl shadow-xl">
+          <div className="flex justify-around mb-8">
+            <button
+              onClick={() => setActiveTab('mutuals')}
+              className={`px-6 py-2 rounded-xl font-semibold transition-colors duration-300 ${activeTab === 'mutuals'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                }`}
+            >
+              Mutual Follows
+            </button>
+            <button
+              onClick={() => setActiveTab('requestsReceived')}
+              className={`px-6 py-2 rounded-xl font-semibold transition-colors duration-300 ${activeTab === 'requestsReceived'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                }`}
+            >
+              Requests Received
+            </button>
+            <button
+              onClick={() => setActiveTab('requestsSent')}
+              className={`px-6 py-2 rounded-xl font-semibold transition-colors duration-300 ${activeTab === 'requestsSent'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                }`}
+            >
+              Requests Sent
+            </button>
+          </div>
 
-      <h2 className="text-xl font-bold mb-3 mt-6">Follow Requests Received</h2>
-      {requestsReceived.length === 0 ? (
-        <p className="text-gray-600">No pending requests to accept.</p>
-      ) : (
-        <ul className="space-y-3 mb-6">
-          {requestsReceived.map(req => (
-            <li key={req.id} className="flex justify-between items-center bg-white p-3 shadow rounded">
-              <Link to={`/profile/${req.from_user.username}`} className="font-semibold hover:underline">
-                {req.from_user.username}
-              </Link>
-              <button
-                onClick={() => acceptRequest(req.id)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded"
-              >
-                Accept
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+          {activeTab === 'mutuals' && (
+            <>
+              <h2 className="text-2xl font-bold border-b border-white/20 pb-2 mb-4 tracking-wide">Mutual Follows</h2>
+              {mutuals.length === 0 ? (
+                <p className="text-gray-400 italic">No mutual friends yet.</p>
+              ) : (
+                mutuals.map(user => renderUserCard(user))
+              )}
+            </>
+          )}
 
-      <h2 className="text-xl font-bold mb-3 mt-6">Follow Requests Sent</h2>
-      {requestsSent.length === 0 ? (
-        <p className="text-gray-600">You haven't sent any follow requests.</p>
-      ) : (
-        <ul className="space-y-3">
-          {requestsSent.map(req => (
-            <li key={req.id} className="flex justify-between items-center bg-gray-50 p-3 shadow-sm rounded text-gray-700">
-              <span>
-                Follow request sent to{' '}
-                <Link to={`/profile/${req.to_user.username}`} className="font-semibold hover:underline">
-                  {req.to_user.username}
-                </Link>
-              </span>
-              <span className="text-sm text-gray-400 italic">Pending</span>
-            </li>
-          ))}
-        </ul>
-      )}
+          {activeTab === 'requestsReceived' && (
+            <>
+              <h2 className="text-3xl font-bold mb-4 border-b border-gray-700 pb-2">Follow Requests Received</h2>
+              {requestsReceived.length === 0 ? (
+                <p className="text-gray-400">No pending requests to accept.</p>
+              ) : (
+                <ul className="space-y-4">
+                  {requestsReceived.map(req => (
+                    <li key={req.id} className="flex justify-between items-center bg-gray-800 p-4 rounded-xl shadow">
+                      <Link to={`/profile/${req.from_user.username}`} className="text-white font-semibold hover:underline">
+                        {req.from_user.username}
+                      </Link>
+                      <button
+                        onClick={() => acceptRequest(req.id)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl font-semibold transition-colors duration-300"
+                      >
+                        Accept
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
+
+          {activeTab === 'requestsSent' && (
+            <>
+              <h2 className="text-3xl font-bold mb-4 border-b border-gray-700 pb-2">Follow Requests Sent</h2>
+              {requestsSent.length === 0 ? (
+                <p className="text-gray-400">You haven't sent any follow requests.</p>
+              ) : (
+                <ul className="space-y-4">
+                  {requestsSent.map(req => (
+                    <li key={req.id} className="flex justify-between items-center bg-gray-800 p-4 rounded-xl text-white shadow">
+                      <span>
+                        Follow request sent to{' '}
+                        <Link to={`/profile/${req.to_user.username}`} className="font-semibold hover:underline">
+                          {req.to_user.username}
+                        </Link>
+                      </span>
+                      <span className="text-sm text-gray-400 italic">Pending</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
+

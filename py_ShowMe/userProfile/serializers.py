@@ -6,18 +6,23 @@ from django.conf import settings
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    privacy = serializers.ChoiceField(choices=Profile.PRIVACY_CHOICES, write_only=True, required=False)
+    print("📋 Privacy received in serializer:", privacy)  # DEBUG
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password']
+        fields = ['username', 'email', 'password', 'privacy']
 
     def create(self, validated_data):
+        privacy = validated_data.pop('privacy', 'public')
         user = User.objects.create_user(
             username=validated_data['username'],
             email=validated_data['email'],
             password=validated_data['password']
         )
+        Profile.objects.create(user=user, privacy=privacy)
         return user
+
 
 class ProfileUpdateSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username')
@@ -36,15 +41,19 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
             setattr(instance.user, attr, value)
         instance.user.save()
 
-        # 2. Handle profile_pic update
-        new_picture = validated_data.get("profile_pic", None)
-        if new_picture not in [None, '', 'null']:
-            if instance.profile_pic:
-                old_path = instance.profile_pic.path
-                if os.path.exists(old_path):
-                    os.remove(old_path)
-            instance.profile_pic = new_picture
+        # 2. Handle profile_pic update (only if a new one is uploaded)
+        if 'profile_pic' in validated_data:
+            new_picture = validated_data.pop("profile_pic")
 
+            # If new picture is provided and not empty
+            if new_picture:
+                # Delete old picture
+                if instance.profile_pic and os.path.exists(instance.profile_pic.path):
+                    os.remove(instance.profile_pic.path)
+                instance.profile_pic = new_picture
+            else:
+                # If new_picture is None or empty, retain existing one (do nothing)
+                pass
 
         # 3. Update other Profile fields
         for attr, value in validated_data.items():
@@ -52,6 +61,7 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+
 
 
 class CurrentUserSerializer(serializers.ModelSerializer):

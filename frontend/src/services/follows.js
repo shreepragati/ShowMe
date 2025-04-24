@@ -25,3 +25,7 @@ export const fetchDetailedFollows = fetchMyFollows;
 
 // Optional: keep the original fetchFollows export if used elsewhere
 export const fetchFollows = fetchMyFollows;
+// Get follow data for any user by username
+export const fetchUserFollows = (username) =>
+  API.get(`/follows/${username}/follows/`);
+

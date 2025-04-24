@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { sendFollowRequest, cancelFollowRequest, unfollowUser } from '../services/follows';
 import { useFollowContext } from '../context/FollowContext';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 const baseURL = 'http://127.0.0.1:8000';
 
@@ -61,47 +62,58 @@ const PostCard = ({ post, currentUserId }) => {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Avatar and Username - No background */}
-      <div className="absolute top-2 left-2 z-10 flex items-center gap-2 px-2 py-1 rounded-full">
+      {/* Avatar and Username */}
+      <motion.div
+        className="absolute top-2 left-2 z-10 flex items-center gap-2 px-2 py-1 rounded-full bg-black/50 backdrop-blur-md"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
         <Link
           to={`/profile/${typeof post.user === 'object' ? post.user.username : post.user}`}
           className="flex items-center gap-2"
         >
           <img
-            src={post.profile_pic ? `${baseURL}${post.profile_pic}` : '/default-avatar.png'}
+            src={post.profile_pic ? `${baseURL}${post.profile_pic}` : `https://ui-avatars.com/api/?name=${post.user?.username || post.user}&background=0D8ABC&color=fff&rounded=true&size=128`}
             alt="Profile"
             className="w-8 h-8 rounded-full object-cover border border-white"
           />
-          <span className="font-semibold text-sm text-gray-900">
+          <span className="font-semibold text-sm text-white">
             {post.user?.username || post.user}
           </span>
         </Link>
+      </motion.div>
 
-        {/* Follow button - on hover only */}
-        {!ownPost && hovered && (
-          <button
-            onClick={handleButtonClick}
-            disabled={loading}
-            title={
-              buttonState === 'Pending'
-                ? 'Click to cancel follow request'
-                : buttonState === 'Following'
-                  ? 'Click to unfollow'
-                  : 'Send follow request'
-            }
-            className={`text-sm px-3 py-1 rounded transition
-              ${buttonState === 'Follow'
-                ? 'bg-blue-500 text-white hover:bg-blue-600'
-                : buttonState === 'Pending'
-                  ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                  : 'bg-green-100 text-green-700 hover:bg-green-200'}
-              ${loading ? 'opacity-50 cursor-not-allowed' : ''}
-            `}
-          >
-            {loading ? '...' : buttonState}
-          </button>
-        )}
-      </div>
+      {/* Follow button - top right on hover */}
+      {!ownPost && hovered && (
+        <motion.button
+          onClick={handleButtonClick}
+          disabled={loading}
+          title={
+            buttonState === 'Pending'
+              ? 'Click to cancel follow request'
+              : buttonState === 'Following'
+                ? 'Click to unfollow'
+                : 'Send follow request'
+          }
+          className={`absolute top-2 right-2 z-10 text-sm px-3 py-1 rounded transition
+            ${buttonState === 'Follow'
+              ? 'bg-blue-500 text-white hover:bg-blue-600'
+              : buttonState === 'Pending'
+                ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                : 'bg-green-100 text-green-700 hover:bg-green-200'}
+            ${loading ? 'opacity-50 cursor-not-allowed' : ''}
+          `}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
+          transition={{ duration: 0.2 }}
+        >
+          {loading ? '...' : buttonState}
+        </motion.button>
+      )}
 
       {/* Post Content */}
       {(post.image || post.video) && (
@@ -124,7 +136,7 @@ const PostCard = ({ post, currentUserId }) => {
       )}
 
       {post.text_content && (
-        <div className="p-3 text-sm">
+        <div className="p-3 text-sm text-gray-800 bg-teal-700/70 rounded-b-xl"> {/* Ensure text is readable */}
           {post.text_content}
         </div>
       )}

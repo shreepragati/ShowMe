@@ -22,5 +22,16 @@ class Post(models.Model):
     video = models.FileField(upload_to='post_videos/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def save(self, *args, **kwargs):
+        if self.video:
+            self.post_type = self.VIDEO
+        elif self.image:
+            self.post_type = self.IMAGE
+        elif self.text_content:
+            self.post_type = self.TEXT
+        else:
+            self.post_type = self.TEXT
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.user.username} - {self.post_type} ({self.created_at})"
