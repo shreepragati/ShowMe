@@ -55,5 +55,13 @@ class PostDetailView(APIView):
         if post.user != request.user:
             return Response({"error": "You do not have permission to delete this post."}, status=status.HTTP_403_FORBIDDEN)
 
+        # Delete the image file from S3 if it exists
+        if post.image:
+            post.image.delete(save=False)
+        if post.video:
+            post.video.delete(save=False)
+
+        # Now delete the post from the database
         post.delete()
+
         return Response({"message": "Post deleted successfully."}, status=status.HTTP_204_NO_CONTENT)

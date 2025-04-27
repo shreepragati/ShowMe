@@ -74,7 +74,7 @@ const PostCard = ({ post, currentUserId }) => {
           className="flex items-center gap-2"
         >
           <img
-            src={post.profile_pic ? `${baseURL}${post.profile_pic}` : `https://ui-avatars.com/api/?name=${post.user?.username || post.user}&background=0D8ABC&color=fff&rounded=true&size=128`}
+            src={post.profile_pic ? `${post.profile_pic}` : `https://ui-avatars.com/api/?name=${post.user?.username || post.user}&background=0D8ABC&color=fff&rounded=true&size=128`}
             alt="Profile"
             className="w-8 h-8 rounded-full object-cover border border-white"
           />
@@ -120,7 +120,7 @@ const PostCard = ({ post, currentUserId }) => {
         <div className="w-full">
           {post.image && (
             <img
-              src={`${baseURL}${post.image}`}
+              src={`${post.image}`}
               alt="Post"
               className="w-full object-cover"
             />
@@ -128,7 +128,7 @@ const PostCard = ({ post, currentUserId }) => {
           {post.video && (
             <video
               controls
-              src={`${baseURL}${post.video}`}
+              src={`${post.video}`}
               className="w-full object-cover"
             />
           )}

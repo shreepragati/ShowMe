@@ -14,6 +14,7 @@ profile_index.settings(
 class ProfileDocument(Document):
     username = fields.TextField(attr='user.username')  # Search by username
     bio = fields.TextField()  # Make 'bio' searchable as full text
+    profile_pic = fields.TextField(attr='get_profile_pic_url')
 
     class Index:
         name = 'profiles'
@@ -21,6 +22,5 @@ class ProfileDocument(Document):
     class Django:
         model = Profile
         fields = [
-            'privacy',
-            'profile_pic',
+            'privacy'
         ]

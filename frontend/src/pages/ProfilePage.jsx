@@ -166,7 +166,7 @@ export default function ProfilePage() {
       >
         <div className="flex items-center space-x-3">
           <img
-            src={follower.profile_pic ? `${baseURL}${follower.profile_pic}` : `https://ui-avatars.com/api/?name=${follower.username}&background=0D8ABC&color=fff&rounded=true&size=128`}
+            src={follower.profile_pic ? `${follower.profile_pic}` : `https://ui-avatars.com/api/?name=${follower.username}&background=0D8ABC&color=fff&rounded=true&size=128`}
             alt="Profile"
             className="w-10 h-10 rounded-full object-cover"
           />
@@ -199,7 +199,7 @@ export default function ProfilePage() {
     <div className="p-4 bg-gray-900 text-white min-h-screen relative">
       <div className="flex flex-col items-center text-center pb-8 border-b border-gray-800">
         <img
-          src={profile.profile_pic ? `${baseURL}${profile.profile_pic}` : `https://ui-avatars.com/api/?name=${user.username}&background=0D8ABC&color=fff&rounded=true&size=128`}
+          src={profile.profile_pic ? `${profile.profile_pic}` : `https://ui-avatars.com/api/?name=${user.username}&background=0D8ABC&color=fff&rounded=true&size=128`}
           alt="Profile"
           className="w-28 h-28 rounded-full object-cover border-2 border-blue-500 mb-3"
         />
@@ -265,7 +265,7 @@ export default function ProfilePage() {
                 <input type="file" id="profile_pic" name="profile_pic" onChange={handleChange} className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline bg-gray-800 text-white" />
                 {formData.profile_pic && (
                   <img
-                    src={formData.profile_pic instanceof File ? URL.createObjectURL(formData.profile_pic) : `${baseURL}${formData.profile_pic}`}
+                    src={formData.profile_pic instanceof File ? URL.createObjectURL(formData.profile_pic) : `${formData.profile_pic}`}
                     alt="Preview"
                     className="w-24 h-24 rounded-full object-cover border-2 border-gray-700 mt-2"
                   />
@@ -352,11 +352,11 @@ export default function ProfilePage() {
                   </button>
                 </div>
                 {post.image && (
-                  <img src={`${baseURL}${post.image}`} alt="Post" className="mt-2 rounded-md w-full object-cover" style={{ maxHeight: 'none' }} />
+                  <img src={`${post.image}`} alt="Post" className="mt-2 rounded-md w-full object-cover" style={{ maxHeight: 'none' }} />
                 )}
                 {post.video && (
                   <video controls className="mt-2 rounded-md w-full" style={{ maxHeight: 'none' }}>
-                    <source src={`${baseURL}${post.video}`} type="video/mp4" />
+                    <source src={`${post.video}`} type="video/mp4" />
                     Your browser does not support the video tag.
                   </video>
                 )}

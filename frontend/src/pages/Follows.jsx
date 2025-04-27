@@ -71,7 +71,7 @@ export default function Follows() {
       >
         <div className="flex items-center space-x-4">
           <img
-            src={user.profile_pic ? `${baseURL}${user.profile_pic}` : `https://ui-avatars.com/api/?name=${user.username}&background=0D8ABC&color=fff&rounded=true&size=128`}
+            src={user.profile_pic ? `${user.profile_pic}` : `https://ui-avatars.com/api/?name=${user.username}&background=0D8ABC&color=fff&rounded=true&size=128`}
             alt="Profile"
             className="w-12 h-12 rounded-full object-cover ring-2 ring-white"
           />

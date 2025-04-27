@@ -6,10 +6,22 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 class SimpleUserSerializer(serializers.ModelSerializer):
-    profile_pic = serializers.ImageField(source='profile.profile_pic')
+    profile_pic = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = ['id', 'username', 'profile_pic']
+
+    def get_profile_pic(self, obj):
+        if hasattr(obj, 'profile') and obj.profile and obj.profile.profile_pic:
+            url = obj.profile.profile_pic.url
+            # Fix malformed URL if needed
+            if url.startswith("https//"):
+                url = url.replace("https//", "https://")
+            elif url.startswith("http//"):
+                url = url.replace("http//", "http://")
+            return url
+        return None
 
 
 

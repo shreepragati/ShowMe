@@ -10,6 +10,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import api_view, permission_classes
 from .serializers import UserRegistrationSerializer,ProfileUpdateSerializer,CurrentUserSerializer
 from django.utils.text import slugify
+from userProfile.models import Profile 
 
 
 # ✅ Register API
@@ -120,6 +121,10 @@ def google_login(request):
             first_name=name.split(' ')[0],
             last_name=' '.join(name.split(' ')[1:])
         )
+        Profile.objects.create(user=user)  # Corrected line
+        
+    if not hasattr(user, 'profile'):
+         Profile.objects.create(user=user)
 
     refresh = RefreshToken.for_user(user)
     user_data = CurrentUserSerializer(user).data

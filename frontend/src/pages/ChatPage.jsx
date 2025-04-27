@@ -47,7 +47,7 @@ export default function ChatPage() {
                   onClick={() => handleUserClick(user.username)}
                 >
                   <img
-                    src={user.profile_pic ? `${baseURL}${user.profile_pic}` : `https://ui-avatars.com/api/?name=${user.username}&background=0D8ABC&color=fff&rounded=true&size=40`}
+                    src={user.profile_pic ? `${user.profile_pic}` : `https://ui-avatars.com/api/?name=${user.username}&background=0D8ABC&color=fff&rounded=true&size=40`}
                     alt="Profile"
                     className="w-10 h-10 rounded-full object-cover mr-3"
                   />
@@ -66,7 +66,7 @@ export default function ChatPage() {
           {mutuals.map(user => user.username === username && (
             <div key={user.id} className="flex items-center space-x-3">
               <img
-                src={user.profile_pic ? `${baseURL}${user.profile_pic}` : `https://ui-avatars.com/api/?name=${user.username}&background=0D8ABC&color=fff&rounded=true&size=40`}
+                src={user.profile_pic ? `${user.profile_pic}` : `https://ui-avatars.com/api/?name=${user.username}&background=0D8ABC&color=fff&rounded=true&size=40`}
                 alt="Profile"
                 className="w-10 h-10 rounded-full object-cover"
               />

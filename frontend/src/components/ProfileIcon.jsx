@@ -15,7 +15,7 @@ export default function ProfileIcon() {
         const path = res.data.profile_pic;
         setUsername(res.data.username || 'User');
         if (path) {
-          setPic(`${baseURL}${path}`);
+          setPic(`${path}`);
         }
       })
       .catch(console.error);

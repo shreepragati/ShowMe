@@ -112,7 +112,7 @@ export default function UserProfile() {
   const renderUserCard = (u) => (
     <div key={u.id} className="flex items-center space-x-3 shadow p-3 rounded mb-2 bg-gray-800">
       <img
-        src={u.profile_pic ? `${baseURL}${u.profile_pic}` : `https://ui-avatars.com/api/?name=${profile.username}&background=0D8ABC&color=fff&rounded=true&size=128`}
+        src={u.profile_pic ? `${u.profile_pic}` : `https://ui-avatars.com/api/?name=${profile.username}&background=0D8ABC&color=fff&rounded=true&size=128`}
         alt="Profile"
         className="w-10 h-10 rounded-full object-cover"
       />
@@ -128,7 +128,7 @@ export default function UserProfile() {
     <div className="max-w-3xl mx-auto p-4">
       <div className="flex flex-col items-center text-center">
         <img
-          src={profile.profile_pic ? `${baseURL}${profile.profile_pic}` : `https://ui-avatars.com/api/?name=${profile.username}&background=0D8ABC&color=fff&rounded=true&size=128`}
+          src={profile.profile_pic ? `${profile.profile_pic}` : `https://ui-avatars.com/api/?name=${profile.username}&background=0D8ABC&color=fff&rounded=true&size=128`}
           alt="Profile"
           className="w-28 h-28 rounded-full object-cover border mb-2"
         />
@@ -217,7 +217,7 @@ export default function UserProfile() {
               <div key={post.id} className="relative border p-2 rounded shadow bg-gray-800">
                 {post.image ? (
                   <img
-                    src={`${baseURL}${post.image}`}
+                    src={`${post.image}`}
                     alt="Post"
                     className="w-full h-40 object-cover rounded mb-2"
                   />
@@ -226,7 +226,7 @@ export default function UserProfile() {
                     controls
                     className="w-full h-40 object-cover rounded mb-2"
                   >
-                    <source src={`${baseURL}${post.video}`} type="video/mp4" />
+                    <source src={`${post.video}`} type="video/mp4" />
                     Your browser does not support the video tag.
                   </video>
                 ) : null}

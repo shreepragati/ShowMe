@@ -41,19 +41,16 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
             setattr(instance.user, attr, value)
         instance.user.save()
 
-        # 2. Handle profile_pic update (only if a new one is uploaded)
+        # 2. Handle profile_pic update (S3 and local storage)
         if 'profile_pic' in validated_data:
             new_picture = validated_data.pop("profile_pic")
 
-            # If new picture is provided and not empty
-            if new_picture:
+            if new_picture:  # Only if a new picture is provided
                 # Delete old picture
-                if instance.profile_pic and os.path.exists(instance.profile_pic.path):
-                    os.remove(instance.profile_pic.path)
-                instance.profile_pic = new_picture
-            else:
-                # If new_picture is None or empty, retain existing one (do nothing)
-                pass
+                if instance.profile_pic:
+                    instance.profile_pic.delete(save=False)
+
+                instance.profile_pic = new_picture  # Assign the new picture
 
         # 3. Update other Profile fields
         for attr, value in validated_data.items():
@@ -61,15 +58,40 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        if instance.profile_pic:
+            url = instance.profile_pic.url
+            if url.startswith("https//"):
+                url = url.replace("https//", "https://")
+            elif url.startswith("http//"):
+                url = url.replace("http//", "http://")
+            rep['profile_pic'] = url
+        return rep
+
 
 
 
 class CurrentUserSerializer(serializers.ModelSerializer):
-    profile_pic = serializers.ImageField(source='profile.profile_pic')
+    profile_pic = serializers.SerializerMethodField()
+
 
     class Meta:
         model = User
         fields = ['id', 'username', 'email', 'first_name', 'last_name', 'profile_pic']
+
+    def get_profile_pic(self, obj):
+        if hasattr(obj, 'profile') and obj.profile and obj.profile.profile_pic:
+            url = obj.profile.profile_pic.url
+            # Fix common typo if present
+            if url.startswith("https//"):
+                url = url.replace("https//", "https://")
+            elif url.startswith("http//"):
+                url = url.replace("http//", "http://")
+            return url
+        return None
+
+
 
 # userProfile/serializers.py
 from django.contrib.auth import get_user_model

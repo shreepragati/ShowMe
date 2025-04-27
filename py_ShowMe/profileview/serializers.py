@@ -12,10 +12,22 @@ class ProfileSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='user.email')
     first_name = serializers.CharField(source='user.first_name')
     last_name = serializers.CharField(source='user.last_name')
+    profile_pic = serializers.SerializerMethodField()
 
     class Meta:
         model = Profile
         fields = ['username', 'email', 'first_name', 'last_name', 'bio', 'dob', 'profile_pic', 'privacy']
+
+    def get_profile_pic(self, obj):
+        if obj.profile_pic:
+            url = obj.profile_pic.url
+            # Fix malformed URL (common if colon is missed)
+            if url.startswith("https//"):
+                url = url.replace("https//", "https://")
+            elif url.startswith("http//"):
+                url = url.replace("http//", "http://")
+            return url
+        return None
 
     def update(self, instance, validated_data):
         # Update User model fields
@@ -26,12 +38,12 @@ class ProfileSerializer(serializers.ModelSerializer):
 
         # Handle profile picture replacement
         new_picture = validated_data.get("profile_pic", None)
-        if new_picture and instance.profile_pic:
-            old_path = instance.profile_pic.path
-            if os.path.exists(old_path):
-                os.remove(old_path)
+        if new_picture:
+            if instance.profile_pic:
+                instance.profile_pic.delete(save=False)
+            instance.profile_pic = new_picture
 
-        # Update Profile model fields
+        # Update other Profile model fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
@@ -39,7 +51,44 @@ class ProfileSerializer(serializers.ModelSerializer):
         return instance
 
 
+
 class PostSerializer(serializers.ModelSerializer):
+    user = serializers.ReadOnlyField(source='user.username')
+    user_id = serializers.ReadOnlyField(source='user.id')
+    profile_pic = serializers.SerializerMethodField()
+    image = serializers.SerializerMethodField()
+    video = serializers.SerializerMethodField()
+
     class Meta:
         model = Post
-        fields = ['id', 'post_type', 'text_content', 'image', 'video', 'created_at']
+        fields = ['id', 'user', 'user_id', 'text_content', 'image', 'video', 'created_at', 'profile_pic']
+
+    def get_profile_pic(self, obj):
+        if hasattr(obj.user, 'profile') and obj.user.profile.profile_pic:
+            url = obj.user.profile.profile_pic.url
+            if url.startswith("https//"):
+                url = url.replace("https//", "https://")
+            elif url.startswith("http//"):
+                url = url.replace("http//", "http://")
+            return url
+        return None
+
+    def get_image(self, obj):
+        if obj.image:
+            url = obj.image.url
+            if url.startswith("https//"):
+                url = url.replace("https//", "https://")
+            elif url.startswith("http//"):
+                url = url.replace("http//", "http://")
+            return url
+        return None
+
+    def get_video(self, obj):
+        if obj.video:
+            url = obj.video.url
+            if url.startswith("https//"):
+                url = url.replace("https//", "https://")
+            elif url.startswith("http//"):
+                url = url.replace("http//", "http://")
+            return url
+        return None

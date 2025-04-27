@@ -45,7 +45,17 @@ export default function CreatePost() {
     e.preventDefault();
     setIsSubmitting(true);
     const formData = new FormData();
-    Object.entries(form).forEach(([k, v]) => v && formData.append(k, v));
+
+    formData.append('post_type', form.post_type);
+    formData.append('text_content', form.text_content);
+
+    if (form.post_type === 'image' && form.image) {
+      formData.append('image', form.image);
+    }
+    if (form.post_type === 'video' && form.video) {
+      formData.append('video', form.video);
+    }
+
     try {
       await createPost(formData);
       toast.success("Post created!");
@@ -58,6 +68,7 @@ export default function CreatePost() {
       setIsSubmitting(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gray-900 p-8 flex items-center justify-center">
